@@ -175,7 +175,7 @@
 <div id="mup" class="ovl">
   <div class="mbox">
     <h2>📤 Subir calendario de exámenes</h2>
-    <p>Selecciona el archivo .xlsx con el calendario del parcial. Se procesa y sube automáticamente.</p>
+    <p>Selecciona el nuevo archivo .xlsx. Los exámenes anteriores se borran automáticamente antes de cargar los nuevos.</p>
     <div class="dz" id="dz" onclick="document.getElementById('fi').click()">
       <div class="di">📂</div>
       <div class="dl">Toca para seleccionar archivo .xlsx</div>
@@ -324,6 +324,17 @@ document.getElementById('bpro').onclick = async () => {
   setStat(65, `☁️ Enviando ${registros.length} registros...`);
 
   try {
+    // Primero limpiar vista_agenda anterior
+    setStat(60, '🗑️ Limpiando datos anteriores...');
+    await fetch(url, {
+      method: 'POST', mode: 'no-cors',
+      headers: {'Content-Type':'text/plain'},
+      body: JSON.stringify({ accion:'limpiar' })
+    });
+    await new Promise(r => setTimeout(r, 1500));
+
+    // Luego subir los nuevos registros
+    setStat(70, '☁️ Enviando registros...');
     // Apps Script acepta POST pero redirige — usamos no-cors y luego verificamos con GET
     await fetch(url, {
       method:  'POST',
@@ -481,7 +492,11 @@ async function cargar() {
       ...r, fecha: normFecha(r.fecha)
     })) : [];
     showSt(false);
-    if (vista==='sem') renderCal(); else buildTabs();
+    // Auto-navegar a la semana que tenga exámenes si la actual está vacía
+    if (vista==='sem') {
+      autoNavSemana();
+      renderCal();
+    } else buildTabs();
     render();
   } catch {
     document.getElementById('status').innerHTML = '⚠️ Error al cargar. Verifica la URL en ⚙️';
@@ -507,6 +522,31 @@ function setV(v) {
 }
 
 // ── CALENDARIO ───────────────────────────────────────────────
+// Navega automáticamente a la semana más próxima con exámenes
+function autoNavSemana() {
+  if (!datos.length) return;
+  // Ordenar fechas únicas
+  const fechas = [...new Set(datos.map(r=>r.fecha))].sort((a,b)=>pF(a)-pF(b));
+  if (!fechas.length) return;
+  // Buscar la fecha más próxima a hoy (incluyendo pasadas recientes)
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
+  // Preferir fechas futuras o de esta semana; si no, la más reciente
+  let target = fechas[fechas.length-1]; // por defecto la última
+  for (const f of fechas) {
+    const fd = new Date(pF(f));
+    if (fd >= hoy) { target = f; break; }
+  }
+  // Calcular a qué semana pertenece target
+  const [d,m,y] = target.split('/');
+  const fdate = new Date(y, m-1, d);
+  const hdia  = fdate.getDay() || 7;
+  const lunes = new Date(fdate); lunes.setDate(fdate.getDate()-hdia+1);
+  const hoy2  = new Date(); hoy2.setHours(0,0,0,0);
+  const hdia2 = hoy2.getDay() || 7;
+  const lunesH = new Date(hoy2); lunesH.setDate(hoy2.getDate()-hdia2+1);
+  semOff = Math.round((lunes-lunesH)/(7*24*3600*1000));
+}
+
 function lunesDe(off) {
   const h = new Date(), d = h.getDay()||7, l = new Date(h);
   l.setDate(h.getDate()-d+1+off*7); l.setHours(0,0,0,0); return l;
