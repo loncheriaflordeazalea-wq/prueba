@@ -1,11 +1,11 @@
 {
   "name": "Exámenes Parciales UNSIS",
   "short_name": "Exámenes",
-  "description": "Recordatorios de aplicación de examen para académicos de Enfermería",
+  "description": "Recordatorios de aplicación de examen — Enfermería UNSIS",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#0b1e2d",
-  "theme_color": "#0f4c75",
+  "theme_color": "#0b1e2d",
   "orientation": "portrait-primary",
   "icons": [
     { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
