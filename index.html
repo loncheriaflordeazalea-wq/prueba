@@ -10,6 +10,8 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400&display=swap" rel="stylesheet"/>
+  <!-- SheetJS para parsear Excel en el browser -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <style>
     :root {
       --bg:      #0b1e2d;
@@ -29,84 +31,163 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: var(--font); background: var(--bg); color: var(--text); min-height: 100vh; }
 
-    /* ── MODAL CONFIGURACIÓN ── */
-    #cfg-overlay {
+    /* ── MODAL BASE ── */
+    .modal-overlay {
       display: none; position: fixed; inset: 0; z-index: 100;
-      background: rgba(0,0,0,.8);
+      background: rgba(0,0,0,.82);
       align-items: center; justify-content: center; padding: 20px;
     }
-    #cfg-overlay.visible { display: flex; }
-    #cfg-box {
+    .modal-overlay.visible { display: flex; }
+    .modal-box {
       background: var(--surface); border: 1px solid var(--border);
       border-radius: var(--r); padding: 28px 24px;
-      width: 100%; max-width: 460px;
+      width: 100%; max-width: 480px;
     }
-    #cfg-box h2 { font-size: 1rem; font-weight: 600; color: var(--accent); margin-bottom: 8px; }
-    #cfg-box p  { font-size: .85rem; color: var(--muted); line-height: 1.55; margin-bottom: 18px; }
-    #cfg-input {
+    .modal-box h2 { font-size: 1rem; font-weight: 600; color: var(--accent); margin-bottom: 8px; }
+    .modal-box p  { font-size: .85rem; color: var(--muted); line-height: 1.55; margin-bottom: 16px; }
+    .modal-input {
       width: 100%; padding: 10px 14px;
       background: var(--surf2); border: 1px solid var(--border);
       border-radius: 8px; color: var(--text);
       font-family: var(--mono); font-size: .78rem;
       outline: none; margin-bottom: 10px;
     }
-    #cfg-input:focus { border-color: var(--accent); }
-    #cfg-error { font-size: .8rem; color: var(--danger); margin-bottom: 12px; display: none; }
-    #btn-guardar {
+    .modal-input:focus { border-color: var(--accent); }
+    .modal-error { font-size: .8rem; color: var(--danger); margin-bottom: 10px; display: none; }
+    .btn-primary {
       width: 100%; padding: 11px; background: var(--accent);
       border: none; border-radius: 8px; color: #0b1e2d;
       font-family: var(--font); font-weight: 600; font-size: .9rem; cursor: pointer;
+      transition: opacity .15s;
     }
-    #btn-guardar:hover { opacity: .9; }
+    .btn-primary:hover { opacity: .9; }
+    .btn-primary:disabled { opacity: .5; cursor: default; }
+
+    /* ── MODAL UPLOAD ── */
+    .drop-zone {
+      border: 2px dashed var(--border); border-radius: 10px;
+      padding: 32px 20px; text-align: center;
+      cursor: pointer; transition: border-color .2s; margin-bottom: 16px;
+    }
+    .drop-zone:hover, .drop-zone.drag { border-color: var(--accent); }
+    .drop-zone .drop-icon { font-size: 2rem; margin-bottom: 8px; }
+    .drop-zone .drop-label { font-size: .88rem; color: var(--muted); }
+    .drop-zone .drop-file  { font-size: .82rem; color: var(--accent); margin-top: 6px; font-weight: 600; }
+    #upload-progress {
+      background: var(--surf2); border-radius: 8px; overflow: hidden;
+      height: 6px; margin-bottom: 12px; display: none;
+    }
+    #upload-bar {
+      height: 100%; width: 0%; background: var(--accent);
+      transition: width .3s ease; border-radius: 8px;
+    }
+    #upload-status { font-size: .82rem; color: var(--muted); margin-bottom: 12px; text-align: center; }
 
     /* ── HEADER ── */
     header {
       background: var(--surface); border-bottom: 1px solid var(--border);
-      padding: 14px 20px; display: flex; align-items: center;
+      padding: 12px 16px; display: flex; align-items: center;
       justify-content: space-between; position: sticky; top: 0; z-index: 10;
+      gap: 10px;
     }
-    .logo { display: flex; align-items: center; gap: 10px; }
+    .logo { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
     .logo-icon {
-      width: 34px; height: 34px; border-radius: 8px; background: var(--accent);
-      display: flex; align-items: center; justify-content: center; font-size: 1.1rem;
+      width: 32px; height: 32px; border-radius: 8px; background: var(--accent);
+      display: flex; align-items: center; justify-content: center; font-size: 1rem;
     }
-    .logo-title { font-size: .95rem; font-weight: 600; }
-    .logo-sub   { font-size: .73rem; color: var(--muted); }
-    #btn-cfg {
+    .logo-title { font-size: .9rem; font-weight: 600; }
+    .logo-sub   { font-size: .7rem; color: var(--muted); }
+    .header-actions { display: flex; gap: 8px; flex-shrink: 0; }
+    .btn-icon {
       background: var(--surf2); border: 1px solid var(--border);
       color: var(--muted); border-radius: 8px;
-      padding: 7px 13px; font-size: .78rem; cursor: pointer; font-family: var(--font);
+      padding: 7px 11px; font-size: .78rem; cursor: pointer; font-family: var(--font);
+      white-space: nowrap; transition: all .15s;
     }
-    #btn-cfg:hover { border-color: var(--accent); color: var(--accent); }
+    .btn-icon:hover { border-color: var(--accent); color: var(--accent); }
+    .btn-icon.upload-btn { color: var(--accent); border-color: var(--accent); }
+    .btn-icon.upload-btn:hover { background: var(--accent); color: #0b1e2d; }
 
     /* ── FILTROS ── */
     .filtros {
-      padding: 12px 20px; display: flex; gap: 10px; flex-wrap: wrap;
+      padding: 10px 16px; display: flex; gap: 8px; flex-wrap: wrap;
       background: var(--surface); border-bottom: 1px solid var(--border);
     }
     .filtros input, .filtros select {
       background: var(--surf2); border: 1px solid var(--border);
-      border-radius: 8px; color: var(--text); padding: 8px 12px;
-      font-family: var(--font); font-size: .84rem; outline: none; flex: 1; min-width: 140px;
+      border-radius: 8px; color: var(--text); padding: 8px 11px;
+      font-family: var(--font); font-size: .84rem; outline: none; flex: 1; min-width: 130px;
     }
     .filtros input:focus, .filtros select:focus { border-color: var(--accent); }
     .filtros select option { background: var(--surf2); }
 
-    /* ── TABS FECHA ── */
-    .tabs {
-      display: flex; gap: 8px; padding: 12px 20px;
+    /* ── VISTA TABS (Semana / Fecha) ── */
+    .view-bar {
+      padding: 10px 16px; background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    }
+    .view-toggle {
+      display: flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden;
+    }
+    .view-btn {
+      padding: 6px 13px; background: transparent; border: none;
+      color: var(--muted); font-family: var(--font); font-size: .8rem;
+      cursor: pointer; transition: all .15s;
+    }
+    .view-btn.active { background: var(--accent); color: #0b1e2d; font-weight: 600; }
+
+    /* ── TABS DE NAVEGACIÓN ── */
+    .tabs-scroll {
+      flex: 1; display: flex; gap: 6px;
       overflow-x: auto; -webkit-overflow-scrolling: touch;
     }
     .tab {
-      padding: 6px 14px; border-radius: 20px; border: 1px solid var(--border);
+      padding: 5px 12px; border-radius: 16px; border: 1px solid var(--border);
       background: transparent; color: var(--muted); font-family: var(--font);
-      font-size: .82rem; cursor: pointer; white-space: nowrap; transition: all .15s;
+      font-size: .8rem; cursor: pointer; white-space: nowrap; transition: all .15s; flex-shrink: 0;
     }
     .tab.active { background: var(--accent); border-color: var(--accent); color: #0b1e2d; font-weight: 600; }
     .tab:hover:not(.active) { border-color: var(--accent); color: var(--accent); }
 
+    /* ── CALENDARIO SEMANAL ── */
+    .cal-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 16px; gap: 8px;
+    }
+    .cal-nav {
+      background: var(--surf2); border: 1px solid var(--border);
+      color: var(--muted); border-radius: 8px; padding: 6px 12px;
+      font-family: var(--font); font-size: .82rem; cursor: pointer;
+    }
+    .cal-nav:hover { border-color: var(--accent); color: var(--accent); }
+    .cal-semana-label { font-size: .88rem; color: var(--text); font-weight: 500; }
+    .cal-grid {
+      display: grid; grid-template-columns: repeat(7, 1fr);
+      gap: 6px; padding: 0 16px 10px;
+    }
+    .cal-day {
+      text-align: center; padding: 8px 4px; border-radius: 8px;
+      border: 1px solid var(--border); cursor: pointer; transition: all .15s;
+    }
+    .cal-day:hover { border-color: var(--accent); }
+    .cal-day.active { background: var(--accent); border-color: var(--accent); }
+    .cal-day-name { font-size: .65rem; color: var(--muted); text-transform: uppercase; margin-bottom: 4px; }
+    .cal-day.active .cal-day-name { color: #0b1e2d; }
+    .cal-day-num  { font-size: .9rem; font-weight: 600; color: var(--text); }
+    .cal-day.active .cal-day-num { color: #0b1e2d; }
+    .cal-day.tiene-examen .cal-day-num::after {
+      content: ''; display: block; width: 5px; height: 5px;
+      background: var(--gold); border-radius: 50%; margin: 3px auto 0;
+    }
+    .cal-day.active.tiene-examen .cal-day-num::after { background: #0b1e2d; }
+    .cal-day.vacio { opacity: .3; pointer-events: none; }
+
     /* ── STATUS ── */
-    #status { text-align: center; padding: 60px 20px; color: var(--muted); font-size: .9rem; display: none; }
+    #status {
+      text-align: center; padding: 60px 20px;
+      color: var(--muted); font-size: .9rem; display: none;
+    }
     #status.visible { display: block; }
     .spinner {
       width: 30px; height: 30px; border-radius: 50%;
@@ -116,15 +197,15 @@
     @keyframes spin { to { transform: rotate(360deg); } }
 
     /* ── RESUMEN ── */
-    .resumen { padding: 6px 20px 10px; font-size: .8rem; color: var(--muted); }
+    .resumen { padding: 6px 16px 8px; font-size: .78rem; color: var(--muted); }
     .resumen span { color: var(--accent); font-weight: 600; }
 
     /* ── GRID ── */
     #grid {
-      padding: 14px 20px;
+      padding: 12px 16px;
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-      gap: 12px;
+      grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+      gap: 10px;
     }
 
     /* ── TARJETA ── */
@@ -134,28 +215,28 @@
     }
     .card:hover { border-color: var(--accent); }
     .card-header {
-      padding: 13px 15px 10px; border-bottom: 1px solid var(--border);
+      padding: 12px 14px 9px; border-bottom: 1px solid var(--border);
       display: flex; align-items: flex-start; justify-content: space-between; gap: 8px;
     }
-    .card-nombre { font-size: .88rem; font-weight: 600; line-height: 1.3; }
-    .card-materia { font-size: .77rem; color: var(--muted); margin-top: 2px; }
+    .card-nombre { font-size: .87rem; font-weight: 600; line-height: 1.3; }
+    .card-materia { font-size: .75rem; color: var(--muted); margin-top: 2px; }
     .badge {
-      font-size: .7rem; font-weight: 600; padding: 3px 9px;
+      font-size: .68rem; font-weight: 600; padding: 3px 8px;
       border-radius: 20px; white-space: nowrap; flex-shrink: 0;
     }
     .badge-ok { background: #0d3b2e; color: var(--accent); border: 1px solid #1a5c47; }
     .badge-no { background: #2e1a0d; color: var(--gold);   border: 1px solid #5c3a1a; }
 
-    .card-body { padding: 11px 15px; display: flex; flex-direction: column; gap: 7px; }
-    .info-row  { display: flex; align-items: center; gap: 8px; font-size: .82rem; color: var(--muted); }
-    .info-icon { font-size: .95rem; flex-shrink: 0; }
+    .card-body { padding: 10px 14px; display: flex; flex-direction: column; gap: 6px; }
+    .info-row  { display: flex; align-items: center; gap: 7px; font-size: .81rem; color: var(--muted); }
+    .info-icon { font-size: .9rem; flex-shrink: 0; }
     .info-val  { color: var(--text); }
 
-    .card-footer { padding: 10px 15px 13px; display: flex; gap: 8px; }
+    .card-footer { padding: 9px 14px 12px; display: flex; gap: 7px; }
     .btn-wa {
       flex: 1; padding: 9px; background: var(--wa); border: none;
       border-radius: 8px; color: #fff; font-family: var(--font); font-weight: 600;
-      font-size: .84rem; cursor: pointer; text-decoration: none;
+      font-size: .83rem; cursor: pointer; text-decoration: none;
       display: flex; align-items: center; justify-content: center; gap: 6px;
       transition: opacity .15s;
     }
@@ -165,7 +246,7 @@
       border: 1px solid var(--border); cursor: default;
     }
     .btn-notif {
-      padding: 9px 13px; border-radius: 8px; background: var(--surf2);
+      padding: 9px 12px; border-radius: 8px; background: var(--surf2);
       border: 1px solid var(--border); color: var(--muted);
       font-family: var(--font); font-size: .82rem; cursor: pointer; transition: all .15s;
     }
@@ -173,20 +254,47 @@
     .btn-notif.marcado { background: #0d3b2e; border-color: #1a5c47; color: var(--accent); }
 
     .empty { grid-column: 1/-1; text-align: center; padding: 60px 20px; color: var(--muted); font-size: .9rem; }
+    .empty-icon { font-size: 2rem; margin-bottom: 10px; }
   </style>
 </head>
 <body>
 
-<!-- ══ MODAL CONFIGURACIÓN ══ -->
-<div id="cfg-overlay" class="visible">
-  <div id="cfg-box">
+<!-- ══ MODAL: CONFIGURACIÓN URL ══ -->
+<div id="cfg-overlay" class="modal-overlay visible">
+  <div class="modal-box">
     <h2>🔐 Configuración</h2>
-    <p>Ingresa la URL de tu Google Apps Script Web App. Se guardará únicamente en este dispositivo y no será visible para nadie más.</p>
-    <input type="url" id="cfg-input"
+    <p>Ingresa la URL de tu Google Apps Script Web App. Se guardará únicamente en este dispositivo.</p>
+    <input type="url" id="cfg-input" class="modal-input"
       placeholder="https://script.google.com/macros/s/.../exec"
       autocomplete="off" spellcheck="false"/>
-    <p id="cfg-error">⚠️ URL inválida. Debe iniciar con https://script.google.com</p>
-    <button id="btn-guardar">Guardar y continuar</button>
+    <p class="modal-error" id="cfg-error">⚠️ URL inválida. Debe iniciar con https://script.google.com</p>
+    <button class="btn-primary" id="btn-guardar">Guardar y continuar</button>
+  </div>
+</div>
+
+<!-- ══ MODAL: SUBIR EXCEL ══ -->
+<div id="upload-overlay" class="modal-overlay">
+  <div class="modal-box">
+    <h2>📤 Subir calendario de exámenes</h2>
+    <p>Selecciona o arrastra el archivo Excel (.xlsx) con el calendario del parcial. Se procesará automáticamente.</p>
+
+    <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
+      <div class="drop-icon">📂</div>
+      <div class="drop-label">Toca para seleccionar archivo .xlsx</div>
+      <div class="drop-file" id="drop-file-name"></div>
+    </div>
+    <input type="file" id="file-input" accept=".xlsx,.xls" style="display:none"/>
+
+    <div id="upload-progress"><div id="upload-bar"></div></div>
+    <div id="upload-status"></div>
+
+    <div style="display:flex;gap:8px">
+      <button class="btn-primary" id="btn-procesar" disabled>Procesar y subir</button>
+      <button class="btn-primary" id="btn-cancelar-upload"
+        style="background:var(--surf2);color:var(--muted);border:1px solid var(--border)">
+        Cancelar
+      </button>
+    </div>
   </div>
 </div>
 
@@ -199,7 +307,11 @@
       <div class="logo-sub">UNSIS · Enfermería</div>
     </div>
   </div>
-  <button id="btn-cfg" onclick="abrirConfig()">⚙️ Configurar</button>
+  <div class="header-actions">
+    <button class="btn-icon upload-btn" onclick="abrirUpload()">📤 Subir Excel</button>
+    <button class="btn-icon" onclick="cargarDatos()">↺ Actualizar</button>
+    <button class="btn-icon" onclick="abrirConfig()">⚙️</button>
+  </div>
 </header>
 
 <!-- ══ FILTROS ══ -->
@@ -212,8 +324,24 @@
   </select>
 </div>
 
-<!-- ══ TABS FECHA ══ -->
-<div class="tabs" id="tabs"></div>
+<!-- ══ BARRA DE VISTA ══ -->
+<div class="view-bar">
+  <div class="view-toggle">
+    <button class="view-btn active" id="vbtn-semana" onclick="setVista('semana')">📅 Semana</button>
+    <button class="view-btn" id="vbtn-fecha" onclick="setVista('fecha')">📋 Lista</button>
+  </div>
+  <div class="tabs-scroll" id="tabs"></div>
+</div>
+
+<!-- ══ CALENDARIO SEMANAL ══ -->
+<div id="cal-section" style="display:none">
+  <div class="cal-header">
+    <button class="cal-nav" id="btn-prev-sem">◀</button>
+    <span class="cal-semana-label" id="cal-semana-label"></span>
+    <button class="cal-nav" id="btn-next-sem">▶</button>
+  </div>
+  <div class="cal-grid" id="cal-grid"></div>
+</div>
 
 <!-- ══ RESUMEN ══ -->
 <div class="resumen" id="resumen"></div>
@@ -228,9 +356,12 @@
 const KEY_URL   = 'examenes_api_url';
 const KEY_NOTIF = 'examenes_notificados';
 
-let todos       = [];
-let fechaActiva = null;
-let notificados = JSON.parse(localStorage.getItem(KEY_NOTIF) || '{}');
+let todos        = [];
+let fechaActiva  = null;
+let vista        = 'semana';   // 'semana' | 'fecha'
+let semanaOffset = 0;          // semanas desde hoy
+let notificados  = JSON.parse(localStorage.getItem(KEY_NOTIF) || '{}');
+let archivoExcel = null;
 
 // ─── CONFIGURACIÓN ────────────────────────────────────────────
 function getUrl() { return localStorage.getItem(KEY_URL) || ''; }
@@ -254,48 +385,341 @@ document.getElementById('btn-guardar').addEventListener('click', () => {
 
 if (getUrl()) document.getElementById('cfg-overlay').classList.remove('visible');
 
-// ─── CARGA ────────────────────────────────────────────────────
+// ─── UPLOAD EXCEL ─────────────────────────────────────────────
+function abrirUpload() {
+  archivoExcel = null;
+  document.getElementById('drop-file-name').textContent = '';
+  document.getElementById('upload-status').textContent  = '';
+  document.getElementById('upload-progress').style.display = 'none';
+  document.getElementById('upload-bar').style.width = '0%';
+  document.getElementById('btn-procesar').disabled = true;
+  document.getElementById('upload-overlay').classList.add('visible');
+}
+
+document.getElementById('btn-cancelar-upload').onclick = () => {
+  document.getElementById('upload-overlay').classList.remove('visible');
+};
+
+// Drag & drop
+const dz = document.getElementById('drop-zone');
+dz.addEventListener('dragover',  e => { e.preventDefault(); dz.classList.add('drag'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('drag'));
+dz.addEventListener('drop', e => {
+  e.preventDefault(); dz.classList.remove('drag');
+  const f = e.dataTransfer.files[0];
+  if (f) seleccionarArchivo(f);
+});
+
+document.getElementById('file-input').addEventListener('change', e => {
+  if (e.target.files[0]) seleccionarArchivo(e.target.files[0]);
+});
+
+function seleccionarArchivo(f) {
+  if (!f.name.match(/\.xlsx?$/i)) {
+    document.getElementById('upload-status').textContent = '⚠️ Solo se aceptan archivos .xlsx';
+    return;
+  }
+  archivoExcel = f;
+  document.getElementById('drop-file-name').textContent = f.name;
+  document.getElementById('upload-status').textContent  = '';
+  document.getElementById('btn-procesar').disabled = false;
+}
+
+document.getElementById('btn-procesar').addEventListener('click', async () => {
+  if (!archivoExcel) return;
+  const url = getUrl();
+  if (!url) { abrirConfig(); return; }
+
+  document.getElementById('btn-procesar').disabled = true;
+  document.getElementById('upload-status').textContent = '📊 Leyendo Excel...';
+  document.getElementById('upload-progress').style.display = 'block';
+  setBar(15);
+
+  try {
+    // 1. Leer con SheetJS en el browser
+    const buffer = await archivoExcel.arrayBuffer();
+    const wb     = XLSX.read(buffer, { type: 'array' });
+    const ws     = wb.Sheets[wb.SheetNames[0]];
+    const rows   = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+
+    document.getElementById('upload-status').textContent = '⚙️ Procesando filas...';
+    setBar(40);
+
+    // 2. Parsear filas en el browser (mismo algoritmo que Apps Script)
+    const registros = parsearFilas(rows);
+
+    document.getElementById('upload-status').textContent = '☁️ Enviando a Google Sheets...';
+    setBar(65);
+
+    // 3. Enviar JSON al Apps Script doPost
+    const resp = await fetch(url, {
+      method:  'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body:    JSON.stringify({ accion: 'importar', registros })
+    });
+
+    setBar(90);
+    const txt = await resp.text();
+    let res;
+    try { res = JSON.parse(txt); } catch { res = { ok: false, msg: txt }; }
+
+    if (res.ok) {
+      setBar(100);
+      document.getElementById('upload-status').textContent = `✅ ${res.msg}`;
+      setTimeout(async () => {
+        document.getElementById('upload-overlay').classList.remove('visible');
+        await cargarDatos();
+      }, 1500);
+    } else {
+      document.getElementById('upload-status').textContent = '⚠️ ' + (res.msg || 'Error desconocido');
+      document.getElementById('btn-procesar').disabled = false;
+    }
+  } catch (err) {
+    document.getElementById('upload-status').textContent = '⚠️ Error: ' + err.message;
+    document.getElementById('btn-procesar').disabled = false;
+  }
+});
+
+function setBar(pct) {
+  document.getElementById('upload-bar').style.width = pct + '%';
+}
+
+// ─── PARSER DE EXCEL (en el browser) ─────────────────────────
+function parsearFilas(rows) {
+  const prefijos = [
+    'L.E.','M.C.','Dr.','Dra.','M.E.','M.S.P.','E.E.P.','E.E.N.',
+    'E.E.S.M.P.','M.R.N.','M.T.H.E.Q.','M.C.I.B.','M.C.E.','M.B.E.',
+    'M.C.C.A.R.B.','M.E.D.','M.A.S.E.','M.I.T.I.','L.N.','M.C.E.E.U.',
+    'Méd.','Mtra.','M.D.G.P.L.'
+  ];
+
+  // Detectar si una celda empieza con prefijo académico
+  function esNombre(s) {
+    if (!s) return false;
+    return prefijos.some(p => s.trim().startsWith(p)) || /^(Dr|Dra|Méd|Mtra)\b/.test(s.trim());
+  }
+
+  // Splitear aplicadores múltiples en una celda
+  function splitAplicadores(celda) {
+    const str = celda.toString().trim();
+    const partes = [];
+    let actual   = '';
+    const tokens = str.split(/\s+/);
+    for (const tok of tokens) {
+      const prefijoPuntual = prefijos.some(p => tok === p.replace(/\.$/, '') + '.' || tok === p);
+      if (prefijoPuntual && actual) {
+        // Nuevo nombre empieza
+        const cortarEn = actual.lastIndexOf(tok);
+        if (cortarEn > 0) {
+          partes.push(actual.slice(0, cortarEn).trim());
+          actual = tok + ' ';
+        } else { actual += tok + ' '; }
+      } else { actual += tok + ' '; }
+    }
+    if (actual.trim()) partes.push(actual.trim());
+    // Si no se pudo splitear, intentar por doble prefijo
+    if (partes.length <= 1) {
+      const patron = new RegExp('(?=' + prefijos.map(p =>
+        p.replace(/\./g, '\\.').replace(/\s/g, '\\s')
+      ).join('|') + ')', 'g');
+      const alt = str.split(patron).map(s => s.trim()).filter(s => s.length > 3);
+      return alt.length > 1 ? alt : [str];
+    }
+    return partes.filter(s => s.length > 3);
+  }
+
+  // Convertir serial Excel → dd/MM/yyyy
+  function serialToFecha(v) {
+    if (!v && v !== 0) return '';
+    const n = parseFloat(v);
+    if (isNaN(n)) {
+      // Si ya viene como fecha en texto
+      const d = new Date(v);
+      if (!isNaN(d)) return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+      return v.toString();
+    }
+    const d = new Date((n - 25569) * 86400 * 1000);
+    const utc = new Date(d.getTime() + d.getTimezoneOffset() * 60000);
+    return `${String(utc.getDate()).padStart(2,'0')}/${String(utc.getMonth()+1).padStart(2,'0')}/${utc.getFullYear()}`;
+  }
+
+  const ENCABEZADOS_SKIP = ['grupo','materia','académico','fecha','hora','aula','cantidad'];
+  const registros = [];
+
+  // Detectar columnas dinámicamente buscando fila con "GRUPO","MATERIA","ACADÉMICO"
+  function esFilaEncabezado(fila) {
+    const vals = fila.map(c => c.toString().toLowerCase().trim());
+    return vals.some(v => v === 'grupo') && vals.some(v => v.includes('materia'));
+  }
+
+  let colGrupo = 0, colMateria = 1, colTitular = 2, colAplicador = 3,
+      colFecha = 4, colHora = 5, colAula = 6;
+  let grupoActual = '';
+
+  for (let i = 0; i < rows.length; i++) {
+    const fila = rows[i].map(c => c === null || c === undefined ? '' : c.toString().trim());
+    const lineaJunta = fila.join(' ').toLowerCase();
+
+    // Saltar filas de encabezado institucional
+    if (lineaJunta.includes('universidad') || lineaJunta.includes('calendario') ||
+        lineaJunta.includes('semestre') || lineaJunta.includes('licenciatura')) continue;
+
+    // Detectar fila de encabezado de columnas
+    if (esFilaEncabezado(fila)) {
+      fila.forEach((v, idx) => {
+        const vl = v.toLowerCase();
+        if (vl === 'grupo') colGrupo = idx;
+        else if (vl.includes('materia')) colMateria = idx;
+        else if (vl.includes('titular')) colTitular = idx;
+        else if (vl.includes('aplicador') || vl.includes('sinodal')) colAplicador = idx;
+        else if (vl === 'fecha') colFecha = idx;
+        else if (vl === 'hora') colHora = idx;
+        else if (vl === 'aula') colAula = idx;
+      });
+      continue;
+    }
+
+    const grupo    = fila[colGrupo]    || grupoActual;
+    const materia  = fila[colMateria]  || '';
+    const aplicRaw = fila[colAplicador]|| '';
+    const fechaRaw = fila[colFecha]    || '';
+    const hora     = fila[colHora]     || '';
+    const aula     = fila[colAula]     || '';
+
+    if (grupo && grupo !== grupoActual) grupoActual = grupo;
+
+    // Saltar filas sin datos útiles
+    if (!aplicRaw || !fechaRaw) continue;
+    if (ENCABEZADOS_SKIP.some(h => materia.toLowerCase().includes(h))) continue;
+
+    const fecha       = serialToFecha(fechaRaw);
+    const aplicadores = splitAplicadores(aplicRaw);
+
+    for (const ap of aplicadores) {
+      if (ap.length < 4) continue;
+      registros.push({
+        aplicador: ap.trim(),
+        materia:   materia,
+        grupo:     grupoActual,
+        fecha:     fecha,
+        hora:      hora,
+        aula:      aula
+      });
+    }
+  }
+
+  return registros;
+}
+
+// ─── CARGA DE DATOS ───────────────────────────────────────────
 async function cargarDatos() {
   const url = getUrl();
   if (!url) return;
-  const status = document.getElementById('status');
-  const grid   = document.getElementById('grid');
-  status.classList.add('visible');
-  grid.innerHTML = '';
-  document.getElementById('tabs').innerHTML = '';
-  document.getElementById('resumen').innerHTML = '';
+  mostrarStatus('Cargando datos...');
   try {
-    const res  = await fetch(url);
+    const res  = await fetch(url + '?t=' + Date.now());
     const data = await res.json();
-    todos = data.filter(r => r.aplicador);
-    status.classList.remove('visible');
-    construirTabs();
+    todos = Array.isArray(data) ? data.filter(r => r.aplicador) : [];
+    ocultarStatus();
+    if (vista === 'semana') renderCalendario();
+    else construirTabs();
     renderCards();
   } catch {
-    status.innerHTML = '⚠️ Error al cargar. Verifica la URL en ⚙️ Configurar.';
+    mostrarStatus('⚠️ Error al cargar. Verifica la URL en ⚙️');
   }
 }
 
-// ─── TABS ────────────────────────────────────────────────────
-function construirTabs() {
-  const fechas = [...new Set(todos.map(r => r.fecha))].sort((a,b) => parseFecha(a) - parseFecha(b));
-  fechaActiva  = fechas[0] || null;
-  const cont   = document.getElementById('tabs');
-  cont.innerHTML = '';
-  [null, ...fechas].forEach(f => cont.appendChild(crearTab(f)));
+function mostrarStatus(msg) {
+  const s = document.getElementById('status');
+  s.innerHTML = `<div class="spinner"></div>${msg}`;
+  s.classList.add('visible');
+  document.getElementById('grid').innerHTML = '';
+}
+function ocultarStatus() { document.getElementById('status').classList.remove('visible'); }
+
+// ─── VISTA ────────────────────────────────────────────────────
+function setVista(v) {
+  vista = v;
+  document.getElementById('vbtn-semana').classList.toggle('active', v === 'semana');
+  document.getElementById('vbtn-fecha').classList.toggle('active',  v === 'fecha');
+  document.getElementById('cal-section').style.display = v === 'semana' ? 'block' : 'none';
+  document.getElementById('tabs').style.display        = v === 'fecha'  ? 'flex'  : 'none';
+  semanaOffset = 0;
+  if (v === 'semana') { renderCalendario(); }
+  else { construirTabs(); }
+  renderCards();
 }
 
-function crearTab(valor) {
-  const btn = document.createElement('button');
-  btn.className = 'tab' + (valor === fechaActiva ? ' active' : '');
-  btn.textContent = valor ? formatTab(valor) : 'Todos';
-  btn.onclick = () => {
-    fechaActiva = valor;
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    btn.classList.add('active');
-    renderCards();
-  };
-  return btn;
+// ─── CALENDARIO SEMANAL ───────────────────────────────────────
+function getLunesDeSemana(offset) {
+  const hoy   = new Date();
+  const dia   = hoy.getDay() || 7; // lunes=1 ... domingo=7
+  const lunes = new Date(hoy);
+  lunes.setDate(hoy.getDate() - dia + 1 + offset * 7);
+  lunes.setHours(0,0,0,0);
+  return lunes;
+}
+
+function renderCalendario() {
+  const lunes   = getLunesDeSemana(semanaOffset);
+  const domingo = new Date(lunes); domingo.setDate(lunes.getDate() + 6);
+  const label   = `${formatFechaLarga(lunes)} — ${formatFechaLarga(domingo)}`;
+  document.getElementById('cal-semana-label').textContent = label;
+
+  // Conjunto de fechas con exámenes
+  const fechasConExamen = new Set(todos.map(r => r.fecha));
+
+  const grid    = document.getElementById('cal-grid');
+  const dias    = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+  grid.innerHTML = '';
+
+  for (let i = 0; i < 7; i++) {
+    const d   = new Date(lunes); d.setDate(lunes.getDate() + i);
+    const key = fechaDDMMYYYY(d);
+    const btn = document.createElement('div');
+    btn.className = 'cal-day';
+    if (fechasConExamen.has(key)) btn.classList.add('tiene-examen');
+    if (key === fechaActiva) btn.classList.add('active');
+    btn.innerHTML = `<div class="cal-day-name">${dias[i]}</div><div class="cal-day-num">${d.getDate()}</div>`;
+    btn.onclick   = () => {
+      fechaActiva = key;
+      document.querySelectorAll('.cal-day').forEach(c => c.classList.remove('active'));
+      btn.classList.add('active');
+      renderCards();
+    };
+    grid.appendChild(btn);
+  }
+}
+
+document.getElementById('btn-prev-sem').onclick = () => { semanaOffset--; fechaActiva = null; renderCalendario(); renderCards(); };
+document.getElementById('btn-next-sem').onclick = () => { semanaOffset++; fechaActiva = null; renderCalendario(); renderCards(); };
+
+function fechaDDMMYYYY(d) {
+  return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+}
+function formatFechaLarga(d) {
+  const meses = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  return `${d.getDate()} ${meses[d.getMonth()]}`;
+}
+
+// ─── TABS DE FECHA (vista lista) ──────────────────────────────
+function construirTabs() {
+  const fechas = [...new Set(todos.map(r => r.fecha))].sort((a,b) => parseFecha(a) - parseFecha(b));
+  if (!fechaActiva) fechaActiva = fechas[0] || null;
+  const cont = document.getElementById('tabs');
+  cont.innerHTML = '';
+  [null, ...fechas].forEach(f => {
+    const btn = document.createElement('button');
+    btn.className = 'tab' + (f === fechaActiva ? ' active' : '');
+    btn.textContent = f ? formatTab(f) : 'Todos';
+    btn.onclick = () => {
+      fechaActiva = f;
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      btn.classList.add('active');
+      renderCards();
+    };
+    cont.appendChild(btn);
+  });
 }
 
 function formatTab(f) {
@@ -303,22 +727,34 @@ function formatTab(f) {
   const meses = ['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
   return `${parseInt(d)} ${meses[parseInt(m)] || m}`;
 }
-
 function parseFecha(f) {
   if (!f) return 0;
   const [d,m,y] = f.split('/');
   return new Date(y, m-1, d).getTime();
 }
 
-// ─── RENDER ──────────────────────────────────────────────────
+// ─── RENDER TARJETAS ──────────────────────────────────────────
 function renderCards() {
-  const buscar  = document.getElementById('buscar').value.toLowerCase();
-  const filtNot = document.getElementById('filtro-notif').value;
+  const buscar   = document.getElementById('buscar').value.toLowerCase();
+  const filtNot  = document.getElementById('filtro-notif').value;
+
+  // En vista semana: filtrar por días de esa semana si no hay fecha activa
+  const lunes   = getLunesDeSemana(semanaOffset);
+  const diasSem = new Set();
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(lunes); d.setDate(lunes.getDate() + i);
+    diasSem.add(fechaDDMMYYYY(d));
+  }
 
   const filtrados = todos.filter(r => {
-    const okFecha = !fechaActiva || r.fecha === fechaActiva;
+    let okFecha;
+    if (vista === 'semana') {
+      okFecha = fechaActiva ? r.fecha === fechaActiva : diasSem.has(r.fecha);
+    } else {
+      okFecha = !fechaActiva || r.fecha === fechaActiva;
+    }
     const okBusq  = r.aplicador.toLowerCase().includes(buscar) ||
-                    r.materia.toLowerCase().includes(buscar);
+                    (r.materia || '').toLowerCase().includes(buscar);
     const notif   = notificados[clave(r)] ? 'SI' : 'NO';
     const okNotif = filtNot === 'todos' || notif === filtNot;
     return okFecha && okBusq && okNotif;
@@ -328,7 +764,9 @@ function renderCards() {
   grid.innerHTML = '';
 
   if (!filtrados.length) {
-    grid.innerHTML = '<div class="empty">Sin resultados para este filtro.</div>';
+    const msg = vista === 'semana'
+      ? 'No hay exámenes esta semana.' : 'Sin resultados para este filtro.';
+    grid.innerHTML = `<div class="empty"><div class="empty-icon">📭</div>${msg}</div>`;
     document.getElementById('resumen').innerHTML = '';
     return;
   }
@@ -341,17 +779,17 @@ function renderCards() {
     `<span>${total}</span> registro${total !== 1 ? 's' : ''} · <span>${nCount}</span> notificado${nCount !== 1 ? 's' : ''}`;
 }
 
-// ─── CLAVE ÚNICA ─────────────────────────────────────────────
+// ─── CLAVE ÚNICA ──────────────────────────────────────────────
 function clave(r) { return `${r.aplicador}|${r.fecha}|${r.hora}|${r.grupo}`; }
 
-// ─── TARJETA ─────────────────────────────────────────────────
+// ─── TARJETA ──────────────────────────────────────────────────
 function crearCard(r) {
-  const k        = clave(r);
-  const yaNotif  = !!notificados[k];
-  const nombre1  = primerNombre(r.aplicador);
-  const tel      = limpiarTel(r.telefono);
-  const msg      = generarMsg(r, nombre1);
-  const urlWA    = tel ? `https://wa.me/52${tel}?text=${encodeURIComponent(msg)}` : null;
+  const k       = clave(r);
+  const yaNotif = !!notificados[k];
+  const nombre1 = primerNombre(r.aplicador);
+  const tel     = limpiarTel(r.telefono);
+  const msg     = generarMsg(r, nombre1);
+  const urlWA   = tel ? `https://wa.me/52${tel}?text=${encodeURIComponent(msg)}` : null;
 
   const card = document.createElement('div');
   card.className = 'card';
@@ -361,7 +799,7 @@ function crearCard(r) {
         <div class="card-nombre">${r.aplicador}</div>
         <div class="card-materia">${r.materia}</div>
       </div>
-      <span class="badge ${yaNotif ? 'badge-ok' : 'badge-no'}">${yaNotif ? '✓ Notificado' : '⏳ Pendiente'}</span>
+      <span class="badge ${yaNotif ? 'badge-ok':'badge-no'}">${yaNotif ? '✓ Notificado':'⏳ Pendiente'}</span>
     </div>
     <div class="card-body">
       <div class="info-row"><span class="info-icon">📅</span><span class="info-val">${r.fecha}</span></div>
@@ -372,7 +810,7 @@ function crearCard(r) {
     <div class="card-footer">
       ${urlWA
         ? `<a class="btn-wa" href="${urlWA}" target="_blank" onclick="marcarNotif('${k}',this.closest('.card'))">
-             <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink:0">
+             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink:0">
                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
                <path d="M12 0C5.373 0 0 5.373 0 12c0 2.065.527 4.013 1.449 5.715L0 24l6.445-1.43A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.818 9.818 0 01-4.992-1.364l-.359-.214-3.724.826.84-3.635-.235-.374A9.817 9.817 0 012.182 12C2.182 6.584 6.584 2.182 12 2.182S21.818 6.584 21.818 12 17.416 21.818 12 21.818z"/>
              </svg>
@@ -380,66 +818,57 @@ function crearCard(r) {
            </a>`
         : `<span class="btn-wa sin-tel">Sin teléfono registrado</span>`
       }
-      <button class="btn-notif ${yaNotif ? 'marcado' : ''}"
-        onclick="toggleNotif('${k}',this)"
-        title="${yaNotif ? 'Marcar pendiente' : 'Marcar notificado'}">
-        ${yaNotif ? '✓' : '○'}
-      </button>
+      <button class="btn-notif ${yaNotif ? 'marcado':''}"
+        onclick="toggleNotif('${k}',this)">${yaNotif ? '✓':'○'}</button>
     </div>`;
   return card;
 }
 
-// ─── MENSAJE WHATSAPP ─────────────────────────────────────────
+// ─── MENSAJE ──────────────────────────────────────────────────
 function generarMsg(r, nombre) {
   return `Hola ${nombre} 👋, te recuerdo que tienes aplicación de examen programada:\n\n` +
-         `📚 Materia: ${r.materia}\n` +
-         `👥 Grupo: ${r.grupo}\n` +
-         `📅 Fecha: ${r.fecha}\n` +
-         `🕐 Hora: ${r.hora}\n` +
-         `🏫 Aula: ${r.aula}\n\n` +
+         `📚 Materia: ${r.materia}\n👥 Grupo: ${r.grupo}\n` +
+         `📅 Fecha: ${r.fecha}\n🕐 Hora: ${r.hora}\n🏫 Aula: ${r.aula}\n\n` +
          `Por favor confirma tu asistencia. ¡Gracias! 🙏`;
 }
 
-// ─── PRIMER NOMBRE ─────────────────────────────────────────────
-function primerNombre(nombreCompleto) {
-  const sinPrefijo = nombreCompleto.replace(/^([A-Z][\w.]+\.?\s+)+/, '').trim();
-  return sinPrefijo.split(' ')[0] || nombreCompleto.split(' ').at(-2) || nombreCompleto;
+function primerNombre(n) {
+  const s = n.replace(/^([A-ZÁÉÍÓÚ][\w.]+\.?\s+)+/u, '').trim();
+  return s.split(' ')[0] || n.split(' ').slice(-2)[0] || n;
 }
 
-// ─── LIMPIAR TELÉFONO ─────────────────────────────────────────
 function limpiarTel(tel) {
   if (!tel) return '';
-  return tel.toString().replace(/\D/g, '').replace(/^52/, '').slice(0, 10);
+  return tel.toString().replace(/\D/g,'').replace(/^52/,'').slice(0,10);
 }
 
 // ─── NOTIFICACIONES ───────────────────────────────────────────
 function marcarNotif(k, card) {
-  notificados[k] = true;
-  guardarNotif();
-  card.querySelector('.badge').className = 'badge badge-ok';
-  card.querySelector('.badge').textContent = '✓ Notificado';
-  const btn = card.querySelector('.btn-notif');
-  btn.classList.add('marcado'); btn.textContent = '✓';
+  notificados[k] = true; guardarNotif();
+  actualizarCard(card, true);
 }
-
 function toggleNotif(k, btn) {
   const on = !notificados[k];
-  notificados[k] = on;
-  guardarNotif();
-  const card  = btn.closest('.card');
-  const badge = card.querySelector('.badge');
-  badge.className   = 'badge ' + (on ? 'badge-ok' : 'badge-no');
-  badge.textContent = on ? '✓ Notificado' : '⏳ Pendiente';
+  notificados[k] = on; guardarNotif();
+  actualizarCard(btn.closest('.card'), on);
   btn.classList.toggle('marcado', on);
   btn.textContent = on ? '✓' : '○';
 }
-
+function actualizarCard(card, on) {
+  const b = card.querySelector('.badge');
+  b.className   = 'badge ' + (on ? 'badge-ok' : 'badge-no');
+  b.textContent = on ? '✓ Notificado' : '⏳ Pendiente';
+}
 function guardarNotif() { localStorage.setItem(KEY_NOTIF, JSON.stringify(notificados)); }
 
 // ─── PWA ──────────────────────────────────────────────────────
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
 
 // ─── INICIO ───────────────────────────────────────────────────
+// Inicializar vista
+document.getElementById('tabs').style.display = 'none';
+document.getElementById('cal-section').style.display = 'block';
+
 if (getUrl()) cargarDatos();
 </script>
 </body>
