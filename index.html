@@ -443,6 +443,21 @@ function parseFechaVal(v) {
 
 function pad(n) { return String(n).padStart(2,'0'); }
 
+function normFecha(f) {
+  if (!f) return '';
+  f = f.toString().trim();
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(f)) return f;
+  if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(f)) {
+    const [d,m,y] = f.split('/');
+    return pad(d)+'/'+pad(m)+'/'+y;
+  }
+  if (/^\d{4}-\d{2}-\d{2}/.test(f)) {
+    const dt = new Date(f);
+    return pad(dt.getUTCDate())+'/'+pad(dt.getUTCMonth()+1)+'/'+dt.getUTCFullYear();
+  }
+  return f;
+}
+
 function splitAps(celda) {
   const s = celda.toString().trim();
   // Regex: split cuando aparece un prefijo académico precedido de texto
@@ -461,7 +476,10 @@ async function cargar() {
   try {
     const r = await fetch(url + '?t=' + Date.now());
     const d = await r.json();
-    datos = Array.isArray(d) ? d.filter(r => r.aplicador) : [];
+    // FIX bug semana: normalizar fechas a dd/MM/yyyy con ceros siempre
+    datos = Array.isArray(d) ? d.filter(r => r.aplicador).map(r => ({
+      ...r, fecha: normFecha(r.fecha)
+    })) : [];
     showSt(false);
     if (vista==='sem') renderCal(); else buildTabs();
     render();
