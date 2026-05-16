@@ -7,19 +7,19 @@
   <link rel="manifest" href="manifest.json"/>
   <meta name="theme-color" content="#0b1e2d"/>
   <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <style>
     :root{
-      --bg:#0b1e2d; --sur:#112233; --sur2:#162d42; --bor:#1e3d58;
-      --acc:#1eb9a0; --gol:#f0a500; --txt:#e2eaf2; --mut:#7a9ab5;
-      --wa:#25d366; --dan:#e05252; --r:12px; --f:'DM Sans',sans-serif;
+      --bg:#0b1e2d;--sur:#112233;--sur2:#162d42;--bor:#1e3d58;
+      --acc:#1eb9a0;--gol:#f0a500;--txt:#e2eaf2;--mut:#7a9ab5;
+      --wa:#25d366;--dan:#e05252;--r:12px;--f:'DM Sans',sans-serif;
     }
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
     body{font-family:var(--f);background:var(--bg);color:var(--txt);min-height:100vh}
 
-    /* MODALS */
+    /* MODAL CONFIG */
     .ovl{display:none;position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.85);
          align-items:center;justify-content:center;padding:16px}
     .ovl.on{display:flex}
@@ -34,40 +34,22 @@
     .err{font-size:.78rem;color:var(--dan);margin-bottom:10px;display:none}
     .btnp{width:100%;padding:11px;background:var(--acc);border:none;border-radius:8px;
           color:#0b1e2d;font-family:var(--f);font-weight:600;font-size:.88rem;cursor:pointer}
-    .btnp:hover{opacity:.9} .btnp:disabled{opacity:.45;cursor:default}
-    .btns{background:var(--sur2);color:var(--mut);border:1px solid var(--bor)}
-    .btns:hover{border-color:var(--acc);color:var(--acc);background:var(--sur2)}
-
-    /* DROP ZONE */
-    .dz{border:2px dashed var(--bor);border-radius:10px;padding:28px 16px;
-        text-align:center;cursor:pointer;transition:border-color .2s;margin-bottom:14px}
-    .dz:hover,.dz.drag{border-color:var(--acc)}
-    .dz .di{font-size:2rem;margin-bottom:6px}
-    .dz .dl{font-size:.85rem;color:var(--mut)}
-    .dz .df{font-size:.8rem;color:var(--acc);margin-top:5px;font-weight:600}
-    .prog{background:var(--sur2);border-radius:8px;overflow:hidden;
-          height:5px;margin-bottom:10px;display:none}
-    .bar{height:100%;width:0;background:var(--acc);transition:width .3s;border-radius:8px}
-    #ustat{font-size:.8rem;color:var(--mut);text-align:center;margin-bottom:10px;min-height:18px}
-    .row2{display:flex;gap:8px}
-    .row2 .btnp{flex:1}
+    .btnp:hover{opacity:.9}
 
     /* HEADER */
     header{background:var(--sur);border-bottom:1px solid var(--bor);
            padding:11px 15px;display:flex;align-items:center;
-           justify-content:space-between;position:sticky;top:0;z-index:10;gap:10px}
-    .logo{display:flex;align-items:center;gap:9px;flex-shrink:0}
+           justify-content:space-between;position:sticky;top:0;z-index:10}
+    .logo{display:flex;align-items:center;gap:9px}
     .lic{width:31px;height:31px;border-radius:8px;background:var(--acc);
          display:flex;align-items:center;justify-content:center;font-size:.95rem}
     .lt{font-size:.88rem;font-weight:600}
     .ls{font-size:.68rem;color:var(--mut)}
-    .hact{display:flex;gap:7px;flex-shrink:0}
+    .hact{display:flex;gap:7px}
     .bhi{background:var(--sur2);border:1px solid var(--bor);color:var(--mut);
          border-radius:8px;padding:7px 11px;font-size:.76rem;cursor:pointer;
          font-family:var(--f);white-space:nowrap;transition:all .15s}
     .bhi:hover{border-color:var(--acc);color:var(--acc)}
-    .bhi.up{color:var(--acc);border-color:var(--acc)}
-    .bhi.up:hover{background:var(--acc);color:#0b1e2d}
 
     /* FILTROS */
     .fil{padding:9px 15px;display:flex;gap:8px;flex-wrap:wrap;
@@ -80,10 +62,10 @@
 
     /* VISTA BAR */
     .vbar{padding:9px 15px;background:var(--sur);border-bottom:1px solid var(--bor);
-          display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+          display:flex;align-items:center;gap:8px}
     .vtog{display:flex;border:1px solid var(--bor);border-radius:8px;overflow:hidden}
-    .vbtn{padding:6px 13px;background:transparent;border:none;
-          color:var(--mut);font-family:var(--f);font-size:.78rem;cursor:pointer;transition:all .15s}
+    .vbtn{padding:6px 13px;background:transparent;border:none;color:var(--mut);
+          font-family:var(--f);font-size:.78rem;cursor:pointer;transition:all .15s}
     .vbtn.on{background:var(--acc);color:#0b1e2d;font-weight:600}
     .tscroll{flex:1;display:flex;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch}
     .tab{padding:5px 12px;border-radius:16px;border:1px solid var(--bor);
@@ -93,25 +75,24 @@
     .tab:hover:not(.on){border-color:var(--acc);color:var(--acc)}
 
     /* CALENDARIO */
-    .calh{display:flex;align-items:center;justify-content:space-between;padding:9px 15px;gap:8px}
+    .calh{display:flex;align-items:center;justify-content:space-between;padding:9px 15px}
     .cnav{background:var(--sur2);border:1px solid var(--bor);color:var(--mut);
-          border-radius:8px;padding:6px 12px;font-family:var(--f);font-size:.8rem;cursor:pointer}
+          border-radius:8px;padding:6px 14px;font-family:var(--f);font-size:.82rem;cursor:pointer}
     .cnav:hover{border-color:var(--acc);color:var(--acc)}
     .clab{font-size:.86rem;font-weight:500}
     .cgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;padding:0 15px 9px}
-    .cday{text-align:center;padding:7px 3px;border-radius:8px;
-          border:1px solid var(--bor);cursor:pointer;transition:all .15s}
+    .cday{text-align:center;padding:8px 3px;border-radius:8px;
+          border:1px solid var(--bor);cursor:pointer;transition:all .15s;user-select:none}
     .cday:hover{border-color:var(--acc)}
     .cday.on{background:var(--acc);border-color:var(--acc)}
     .cdn{font-size:.62rem;color:var(--mut);text-transform:uppercase;margin-bottom:3px}
-    .cday.on .cdn{color:#0b1e2d}
-    .cnum{font-size:.88rem;font-weight:600}
-    .cday.on .cnum{color:#0b1e2d}
-    .cday.tiene .cnum::after{content:'';display:block;width:5px;height:5px;
-      background:var(--gol);border-radius:50%;margin:2px auto 0}
-    .cday.on.tiene .cnum::after{background:#0b1e2d}
-    .cday.hoy .cnum{color:var(--acc)}
-    .cday.on.hoy .cnum{color:#0b1e2d}
+    .cday.on .cdn,.cday.on .cnum{color:#0b1e2d}
+    .cnum{font-size:.9rem;font-weight:600}
+    .cday.hoy:not(.on) .cnum{color:var(--acc)}
+    /* punto dorado = tiene exámenes */
+    .cday.tiene::after{content:'';display:block;width:5px;height:5px;
+      background:var(--gol);border-radius:50%;margin:3px auto 0}
+    .cday.on.tiene::after{background:#0b1e2d}
 
     /* STATUS */
     #status{text-align:center;padding:50px 20px;color:var(--mut);font-size:.88rem;display:none}
@@ -119,12 +100,16 @@
     .spin{width:28px;height:28px;border-radius:50%;border:3px solid var(--bor);
           border-top-color:var(--acc);animation:sp .8s linear infinite;margin:0 auto 12px}
     @keyframes sp{to{transform:rotate(360deg)}}
+
+    /* RESUMEN */
     .res{padding:5px 15px 8px;font-size:.77rem;color:var(--mut)}
     .res span{color:var(--acc);font-weight:600}
 
     /* GRID */
     #grid{padding:11px 15px;display:grid;
           grid-template-columns:repeat(auto-fill,minmax(285px,1fr));gap:10px}
+
+    /* TARJETA */
     .card{background:var(--sur);border:1px solid var(--bor);
           border-radius:var(--r);overflow:hidden;transition:border-color .15s}
     .card:hover{border-color:var(--acc)}
@@ -132,8 +117,7 @@
         display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
     .cn{font-size:.86rem;font-weight:600;line-height:1.3}
     .cm{font-size:.74rem;color:var(--mut);margin-top:2px}
-    .bdg{font-size:.67rem;font-weight:600;padding:3px 8px;border-radius:20px;
-         white-space:nowrap;flex-shrink:0}
+    .bdg{font-size:.67rem;font-weight:600;padding:3px 8px;border-radius:20px;white-space:nowrap;flex-shrink:0}
     .bok{background:#0d3b2e;color:var(--acc);border:1px solid #1a5c47}
     .bno{background:#2e1a0d;color:var(--gol);border:1px solid #5c3a1a}
     .cb{padding:9px 13px;display:flex;flex-direction:column;gap:6px}
@@ -152,13 +136,12 @@
          font-size:.8rem;cursor:pointer;transition:all .15s}
     .bnt:hover{border-color:var(--acc);color:var(--acc)}
     .bnt.mk{background:#0d3b2e;border-color:#1a5c47;color:var(--acc)}
-    .empty{grid-column:1/-1;text-align:center;padding:50px 20px;
-           color:var(--mut);font-size:.88rem}
+    .empty{grid-column:1/-1;text-align:center;padding:50px 20px;color:var(--mut);font-size:.88rem}
   </style>
 </head>
 <body>
 
-<!-- ══ MODAL: URL ══ -->
+<!-- MODAL CONFIG -->
 <div id="mcfg" class="ovl on">
   <div class="mbox">
     <h2>🔐 Configuración</h2>
@@ -171,40 +154,19 @@
   </div>
 </div>
 
-<!-- ══ MODAL: SUBIR EXCEL ══ -->
-<div id="mup" class="ovl">
-  <div class="mbox">
-    <h2>📤 Subir calendario de exámenes</h2>
-    <p>Selecciona el nuevo archivo .xlsx. Los exámenes anteriores se borran automáticamente antes de cargar los nuevos.</p>
-    <div class="dz" id="dz" onclick="document.getElementById('fi').click()">
-      <div class="di">📂</div>
-      <div class="dl">Toca para seleccionar archivo .xlsx</div>
-      <div class="df" id="dfn"></div>
-    </div>
-    <input type="file" id="fi" accept=".xlsx,.xls" style="display:none"/>
-    <div class="prog" id="prog"><div class="bar" id="bar"></div></div>
-    <div id="ustat"></div>
-    <div class="row2">
-      <button class="btnp" id="bpro" disabled>Procesar y subir</button>
-      <button class="btnp btns" id="bcan">Cancelar</button>
-    </div>
-  </div>
-</div>
-
-<!-- ══ HEADER ══ -->
+<!-- HEADER -->
 <header>
   <div class="logo">
     <div class="lic">📋</div>
     <div><div class="lt">Exámenes Parciales</div><div class="ls">UNSIS · Enfermería</div></div>
   </div>
   <div class="hact">
-    <button class="bhi up" onclick="abrirUp()">📤 Subir Excel</button>
-    <button class="bhi" onclick="cargar()">↺</button>
+    <button class="bhi" onclick="cargar()">↺ Actualizar</button>
     <button class="bhi" onclick="abrirCfg()">⚙️</button>
   </div>
 </header>
 
-<!-- ══ FILTROS ══ -->
+<!-- FILTROS -->
 <div class="fil">
   <input type="search" id="bus" placeholder="🔍  Buscar profesor o materia..." oninput="render()"/>
   <select id="fnot" onchange="render()">
@@ -214,7 +176,7 @@
   </select>
 </div>
 
-<!-- ══ VISTA BAR ══ -->
+<!-- VISTA BAR -->
 <div class="vbar">
   <div class="vtog">
     <button class="vbtn on" id="vs" onclick="setV('sem')">📅 Semana</button>
@@ -223,38 +185,29 @@
   <div class="tscroll" id="tabs" style="display:none"></div>
 </div>
 
-<!-- ══ CALENDARIO ══ -->
+<!-- CALENDARIO -->
 <div id="cal">
   <div class="calh">
-    <button class="cnav" id="bp">◀</button>
+    <button class="cnav" onclick="navSem(-1)">◀</button>
     <span class="clab" id="clab"></span>
-    <button class="cnav" id="bn">▶</button>
+    <button class="cnav" onclick="navSem(1)">▶</button>
   </div>
   <div class="cgrid" id="cg"></div>
 </div>
 
-<!-- ══ RESUMEN + STATUS + GRID ══ -->
 <div class="res" id="res"></div>
 <div id="status"><div class="spin"></div>Cargando datos...</div>
 <div id="grid"></div>
 
 <script>
-// ── ESTADO GLOBAL ────────────────────────────────────────────
 const KU = 'exm_url', KN = 'exm_notif';
-let datos    = [];
-let fechaSel = null;
-let vista    = 'sem';
-let semOff   = 0;
-let notif    = JSON.parse(localStorage.getItem(KN)||'{}');
-let archi    = null;
+let datos   = [];
+let selFecha = null;
+let vista   = 'sem';
+let semOff  = 0;
+let notif   = JSON.parse(localStorage.getItem(KN)||'{}');
 
-// ── PREFIJOS ACADÉMICOS ──────────────────────────────────────
-const PREF = ['L.E.','M.C.','Dr.','Dra.','M.E.','M.S.P.','E.E.P.','E.E.N.',
-  'E.E.S.M.P.','M.R.N.','M.T.H.E.Q.','M.C.I.B.','M.C.E.','M.B.E.',
-  'M.C.C.A.R.B.','M.E.D.','M.A.S.E.','M.I.T.I.','L.N.','M.C.E.E.U.',
-  'Méd.','Mtra.','M.D.G.P.L.','M.E.S.','M.C.A.C.','E.E.'];
-
-// ── CONFIG ───────────────────────────────────────────────────
+// ── CONFIG ────────────────────────────────────────────────────
 const getUrl = () => localStorage.getItem(KU)||'';
 
 function abrirCfg() {
@@ -266,7 +219,7 @@ function abrirCfg() {
 document.getElementById('bguardar').onclick = () => {
   const u = document.getElementById('curl').value.trim();
   if (!u.startsWith('https://script.google.com')) {
-    document.getElementById('cerr').style.display = 'block'; return;
+    document.getElementById('cerr').style.display='block'; return;
   }
   localStorage.setItem(KU, u);
   document.getElementById('mcfg').classList.remove('on');
@@ -275,240 +228,22 @@ document.getElementById('bguardar').onclick = () => {
 
 if (getUrl()) document.getElementById('mcfg').classList.remove('on');
 
-// ── UPLOAD ───────────────────────────────────────────────────
-function abrirUp() {
-  archi = null;
-  document.getElementById('dfn').textContent = '';
-  document.getElementById('ustat').textContent = '';
-  document.getElementById('prog').style.display = 'none';
-  document.getElementById('bar').style.width = '0%';
-  document.getElementById('bpro').disabled = true;
-  document.getElementById('mup').classList.add('on');
-}
-
-document.getElementById('bcan').onclick = () => document.getElementById('mup').classList.remove('on');
-
-const dz = document.getElementById('dz');
-dz.addEventListener('dragover',  e => { e.preventDefault(); dz.classList.add('drag'); });
-dz.addEventListener('dragleave', () => dz.classList.remove('drag'));
-dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('drag'); setArchi(e.dataTransfer.files[0]); });
-document.getElementById('fi').onchange = e => setArchi(e.target.files[0]);
-
-function setArchi(f) {
-  if (!f || !f.name.match(/\.xlsx?$/i)) {
-    document.getElementById('ustat').textContent = '⚠️ Solo archivos .xlsx'; return;
-  }
-  archi = f;
-  document.getElementById('dfn').textContent = f.name;
-  document.getElementById('ustat').textContent = '';
-  document.getElementById('bpro').disabled = false;
-}
-
-document.getElementById('bpro').onclick = async () => {
-  if (!archi) return;
-  const url = getUrl();
-  if (!url) { abrirCfg(); return; }
-
-  document.getElementById('bpro').disabled = true;
-  document.getElementById('prog').style.display = 'block';
-
-  setStat(15, '📊 Leyendo Excel...');
-  const buf = await archi.arrayBuffer();
-  const wb  = XLSX.read(buf, { type:'array', cellDates:false });
-  const ws  = wb.Sheets[wb.SheetNames[0]];
-  const raw = XLSX.utils.sheet_to_json(ws, { header:1, defval:'' });
-
-  setStat(40, '⚙️ Procesando filas...');
-  const registros = parsearExcel(raw);
-
-  setStat(65, `☁️ Enviando ${registros.length} registros...`);
-
-  try {
-    // Primero limpiar vista_agenda anterior
-    setStat(60, '🗑️ Limpiando datos anteriores...');
-    await fetch(url, {
-      method: 'POST', mode: 'no-cors',
-      headers: {'Content-Type':'text/plain'},
-      body: JSON.stringify({ accion:'limpiar' })
-    });
-    await new Promise(r => setTimeout(r, 1500));
-
-    // Luego subir los nuevos registros
-    setStat(70, '☁️ Enviando registros...');
-    // Apps Script acepta POST pero redirige — usamos no-cors y luego verificamos con GET
-    await fetch(url, {
-      method:  'POST',
-      mode:    'no-cors',
-      headers: { 'Content-Type': 'text/plain' },
-      body:    JSON.stringify({ accion:'importar', registros })
-    });
-
-    // Esperar 2s y verificar que los datos llegaron con un GET
-    setStat(80, '⏳ Verificando...');
-    await new Promise(r => setTimeout(r, 2500));
-
-    const check = await fetch(url + '?t=' + Date.now());
-    const chkData = await check.json();
-
-    setStat(100, '');
-
-    if (Array.isArray(chkData) && chkData.length > 0) {
-      document.getElementById('ustat').textContent = `✅ ${chkData.length} registros cargados correctamente.`;
-      datos = chkData;
-      setTimeout(() => {
-        document.getElementById('mup').classList.remove('on');
-        if (vista === 'sem') renderCal(); else buildTabs();
-        render();
-      }, 1400);
-    } else {
-      // El POST con no-cors puede no haber llegado — intentar estrategia alternativa
-      setStat(0, '⚠️ No se detectaron datos. Intenta de nuevo o verifica el deploy.');
-      document.getElementById('bpro').disabled = false;
-    }
-  } catch(err) {
-    setStat(0, '⚠️ Error: ' + err.message);
-    document.getElementById('bpro').disabled = false;
-  }
-};
-
-function setStat(pct, msg) {
-  document.getElementById('bar').style.width = pct + '%';
-  if (msg !== undefined) document.getElementById('ustat').textContent = msg;
-}
-
-// ── PARSER DE EXCEL (browser) ────────────────────────────────
-function parsearExcel(rows) {
-  const SKIP = ['universidad','calendario','semestre','licenciatura','evaluación'];
-  const registros = [];
-  let grupoActual = '';
-  let colG=0, colM=1, colT=2, colA=3, colF=4, colH=5, colAU=6;
-
-  for (const row of rows) {
-    const c = row.map(v => v===null||v===undefined ? '' : String(v).trim());
-    const linea = c.join(' ').toLowerCase();
-
-    // Saltar encabezados institucionales
-    if (SKIP.some(s => linea.includes(s))) continue;
-
-    // Detectar fila de encabezado de columnas
-    if (c[0]==='GRUPO' && c.some(v => v.includes('MATERIA'))) {
-      c.forEach((v,i) => {
-        const vl = v.toLowerCase();
-        if (vl==='grupo') colG=i;
-        else if (vl.includes('materia')) colM=i;
-        else if (vl.includes('titular')) colT=i;
-        else if (vl.includes('aplicador')||vl.includes('sinodal')) colA=i;
-        else if (vl==='fecha') colF=i;
-        else if (vl==='hora') colH=i;
-        else if (vl==='aula') colAU=i;
-      });
-      continue;
-    }
-
-    const grupo = c[colG] || grupoActual;
-    const mat   = c[colM] || '';
-    const apRaw = c[colA] || '';
-    const fRaw  = c[colF] || '';
-    const hora  = c[colH] || '';
-    const aula  = c[colAU]|| '';
-
-    if (!mat || !apRaw || !fRaw) continue;
-    if (mat.toLowerCase() === 'materia') continue;
-
-    if (grupo && grupo !== 'GRUPO') grupoActual = grupo;
-
-    const fecha = parseFechaVal(fRaw);
-    const aps   = splitAps(apRaw);
-
-    for (const ap of aps) {
-      if (ap.length < 4) continue;
-      registros.push({ aplicador:ap, materia:mat, grupo:grupoActual, fecha, hora, aula });
-    }
-  }
-  return registros;
-}
-
-function parseFechaVal(v) {
-  if (!v && v !== 0) return '';
-  // Date object de SheetJS (cellDates:true) — usar UTC para evitar zona horaria
-  if (v instanceof Date) {
-    return pad(v.getUTCDate())+'/'+pad(v.getUTCMonth()+1)+'/'+v.getUTCFullYear();
-  }
-  const s = v.toString().trim();
-  // Ya viene dd/MM/yyyy con ceros
-  if (/^\d{2}\/\d{2}\/\d{4}$/.test(s)) return s;
-  // d/M/yyyy sin ceros
-  if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(s)) {
-    const [d,m,y] = s.split('/');
-    return pad(d)+'/'+pad(m)+'/'+y;
-  }
-  // ISO: 2026-05-07 o 2026-05-07T00:00:00
-  if (/^\d{4}-\d{2}-\d{2}/.test(s)) {
-    const [y,m,d] = s.slice(0,10).split('-');
-    return pad(d)+'/'+pad(m)+'/'+y;
-  }
-  // Serial numérico de Excel
-  const n = parseFloat(s);
-  if (!isNaN(n) && n > 40000) {
-    const d = new Date((n-25569)*86400*1000);
-    return pad(d.getUTCDate())+'/'+pad(d.getUTCMonth()+1)+'/'+d.getUTCFullYear();
-  }
-  return s;
-}
-
-function pad(n) { return String(n).padStart(2,'0'); }
-
-function normFecha(f) {
-  if (!f) return '';
-  // Date object
-  if (f instanceof Date) return pad(f.getUTCDate())+'/'+pad(f.getUTCMonth()+1)+'/'+f.getUTCFullYear();
-  const s = f.toString().trim();
-  // dd/MM/yyyy perfecto
-  if (/^\d{2}\/\d{2}\/\d{4}$/.test(s)) return s;
-  // d/M/yyyy sin ceros
-  if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(s)) {
-    const [d,m,y] = s.split('/'); return pad(d)+'/'+pad(m)+'/'+y;
-  }
-  // ISO o con hora: 2026-05-07... o Thu May 07 2026...
-  if (/^\d{4}-\d{2}-\d{2}/.test(s)) {
-    const [y,m,d] = s.slice(0,10).split('-'); return pad(d)+'/'+pad(m)+'/'+y;
-  }
-  // Fallback Date parse (para strings como "Thu May 07 2026 00:00:00")
-  const dt = new Date(s);
-  if (!isNaN(dt.getTime())) return pad(dt.getUTCDate())+'/'+pad(dt.getUTCMonth()+1)+'/'+dt.getUTCFullYear();
-  return s;
-}
-
-function splitAps(celda) {
-  const s = celda.toString().trim();
-  // Regex: split cuando aparece un prefijo académico precedido de texto
-  const patron = new RegExp('(?<=[a-záéíóúüñA-ZÁÉÍÓÚÜÑ.])\\s+(?=' +
-    PREF.map(p => p.replace(/\./g,'\\.')).join('|') + ')', 'u');
-  const partes = s.split(patron).map(p => p.trim()).filter(p => p.length > 3);
-  return partes.length > 0 ? partes : [s];
-}
-
-// ── CARGA DE DATOS ───────────────────────────────────────────
+// ── CARGA ─────────────────────────────────────────────────────
 async function cargar() {
-  const url = getUrl();
-  if (!url) return;
+  const url = getUrl(); if (!url) return;
   showSt(true);
   document.getElementById('grid').innerHTML = '';
   try {
     const r = await fetch(url + '?t=' + Date.now());
     const d = await r.json();
-    // FIX bug semana: normalizar fechas a dd/MM/yyyy con ceros siempre
-    datos = Array.isArray(d) ? d.filter(r => r.aplicador).map(r => ({
-      ...r, fecha: normFecha(r.fecha)
+    datos = Array.isArray(d) ? d.filter(x => x.aplicador).map(x => ({
+      ...x, fecha: normFecha(x.fecha), hora: limpHora(x.hora)
     })) : [];
     showSt(false);
-    // Auto-navegar a la semana que tenga exámenes si la actual está vacía
-    if (vista==='sem') {
-      autoNavSemana();
-      renderCal();
-    } else buildTabs();
+    autoNav();
+    if (vista==='sem') renderCal(); else buildTabs();
     render();
-  } catch {
+  } catch(e) {
     document.getElementById('status').innerHTML = '⚠️ Error al cargar. Verifica la URL en ⚙️';
   }
 }
@@ -519,160 +254,163 @@ function showSt(on) {
   s.classList.toggle('on', on);
 }
 
-// ── VISTA ────────────────────────────────────────────────────
+// ── FECHAS ────────────────────────────────────────────────────
+function pad2(n) { return String(n).padStart(2,'0'); }
+
+function normFecha(f) {
+  if (!f) return '';
+  const s = f.toString().trim();
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(s)) return s;
+  if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(s)) {
+    const [d,m,y]=s.split('/'); return pad2(d)+'/'+pad2(m)+'/'+y;
+  }
+  if (/^\d{4}-\d{2}-\d{2}/.test(s)) {
+    const [y,m,d]=s.slice(0,10).split('-'); return pad2(d)+'/'+pad2(m)+'/'+y;
+  }
+  const dt = new Date(s);
+  if (!isNaN(dt)) return pad2(dt.getUTCDate())+'/'+pad2(dt.getUTCMonth()+1)+'/'+dt.getUTCFullYear();
+  return s;
+}
+
+function limpHora(h) {
+  if (!h) return '';
+  // Quitar segundos: "09:00:00" → "09:00"  |  "9:00:00 AM" → "09:00 AM"
+  return h.toString().trim().replace(/(\d{1,2}:\d{2}):\d{2}/, '$1');
+}
+
+function fechaBonita(f) {
+  if (!f||!f.includes('/')) return f||'';
+  const [d,m,y]=f.split('/');
+  const M=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  return `${parseInt(d)} ${M[parseInt(m)-1]} ${y}`;
+}
+
+function pF(f) {
+  if (!f) return 0;
+  const [d,m,y]=f.split('/');
+  return new Date(y,m-1,d).getTime();
+}
+
+function fmtDia(d) {
+  return pad2(d.getDate())+'/'+pad2(d.getMonth()+1)+'/'+d.getFullYear();
+}
+
+// ── AUTONAV: ir a la semana con exámenes más próximos ─────────
+function autoNav() {
+  if (!datos.length) return;
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
+  const fechas = [...new Set(datos.map(r=>r.fecha))].sort((a,b)=>pF(a)-pF(b));
+  let target = fechas[fechas.length-1];
+  for (const f of fechas) { if (pF(f) >= hoy.getTime()) { target=f; break; } }
+  const [d,m,y] = target.split('/');
+  const fd = new Date(y,m-1,d);
+  const dia = fd.getDay()||7;
+  const lunFd = new Date(fd); lunFd.setDate(fd.getDate()-dia+1);
+  const diaH = hoy.getDay()||7;
+  const lunH = new Date(hoy); lunH.setDate(hoy.getDate()-diaH+1);
+  semOff = Math.round((lunFd-lunH)/(7*86400000));
+}
+
+// ── VISTA ─────────────────────────────────────────────────────
 function setV(v) {
-  vista = v;
-  document.getElementById('vs').classList.toggle('on', v==='sem');
-  document.getElementById('vl').classList.toggle('on', v==='lst');
-  document.getElementById('cal').style.display = v==='sem' ? 'block' : 'none';
-  document.getElementById('tabs').style.display = v==='lst' ? 'flex'  : 'none';
-  semOff = 0; fechaSel = null;
-  if (v==='sem') renderCal(); else buildTabs();
+  vista=v;
+  document.getElementById('vs').classList.toggle('on',v==='sem');
+  document.getElementById('vl').classList.toggle('on',v==='lst');
+  document.getElementById('cal').style.display  = v==='sem'?'block':'none';
+  document.getElementById('tabs').style.display = v==='lst'?'flex':'none';
+  semOff=0; selFecha=null;
+  if (v==='sem') { autoNav(); renderCal(); } else buildTabs();
   render();
 }
 
-// ── CALENDARIO ───────────────────────────────────────────────
-// Navega automáticamente a la semana más próxima con exámenes
-function autoNavSemana() {
-  if (!datos.length) return;
-  // Ordenar fechas únicas
-  const fechas = [...new Set(datos.map(r=>r.fecha))].sort((a,b)=>pF(a)-pF(b));
-  if (!fechas.length) return;
-  // Buscar la fecha más próxima a hoy (incluyendo pasadas recientes)
-  const hoy = new Date(); hoy.setHours(0,0,0,0);
-  // Preferir fechas futuras o de esta semana; si no, la más reciente
-  let target = fechas[fechas.length-1]; // por defecto la última
-  for (const f of fechas) {
-    const fd = new Date(pF(f));
-    if (fd >= hoy) { target = f; break; }
-  }
-  // Calcular a qué semana pertenece target
-  const [d,m,y] = target.split('/');
-  const fdate = new Date(y, m-1, d);
-  const hdia  = fdate.getDay() || 7;
-  const lunes = new Date(fdate); lunes.setDate(fdate.getDate()-hdia+1);
-  const hoy2  = new Date(); hoy2.setHours(0,0,0,0);
-  const hdia2 = hoy2.getDay() || 7;
-  const lunesH = new Date(hoy2); lunesH.setDate(hoy2.getDate()-hdia2+1);
-  semOff = Math.round((lunes-lunesH)/(7*24*3600*1000));
+// ── CALENDARIO ────────────────────────────────────────────────
+function lunesDe(off) {
+  const h=new Date(), dia=h.getDay()||7, l=new Date(h);
+  l.setDate(h.getDate()-dia+1+off*7); l.setHours(0,0,0,0); return l;
 }
 
-function lunesDe(off) {
-  const h = new Date(), d = h.getDay()||7, l = new Date(h);
-  l.setDate(h.getDate()-d+1+off*7); l.setHours(0,0,0,0); return l;
-}
+function navSem(dir) { semOff+=dir; selFecha=null; renderCal(); render(); }
 
 function renderCal() {
   const lun = lunesDe(semOff);
   const dom = new Date(lun); dom.setDate(lun.getDate()+6);
-  const mes = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  const M   = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  const mismaAnio = lun.getFullYear()===dom.getFullYear();
   document.getElementById('clab').textContent =
-    `${lun.getDate()} ${mes[lun.getMonth()]} — ${dom.getDate()} ${mes[dom.getMonth()]} ${dom.getFullYear()}`;
+    `${lun.getDate()} ${M[lun.getMonth()]}${mismaAnio?'':' '+lun.getFullYear()} — ${dom.getDate()} ${M[dom.getMonth()]} ${dom.getFullYear()}`;
 
   const conExamen = new Set(datos.map(r=>r.fecha));
-  const hoyStr   = fmt(new Date());
+  const hoyStr   = fmtDia(new Date());
   const dias     = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
   const cg = document.getElementById('cg');
   cg.innerHTML = '';
 
   for (let i=0; i<7; i++) {
-    const d = new Date(lun); d.setDate(lun.getDate()+i);
-    const k = fmt(d);
-    const div = document.createElement('div');
-    div.className = 'cday' +
-      (conExamen.has(k) ? ' tiene' : '') +
-      (k===fechaSel ? ' on' : '') +
-      (k===hoyStr ? ' hoy' : '');
-    div.innerHTML = `<div class="cdn">${dias[i]}</div><div class="cnum">${d.getDate()}</div>`;
-    div.onclick = () => {
-      fechaSel = fechaSel===k ? null : k;
-      renderCal(); render();
-    };
+    const d=new Date(lun); d.setDate(lun.getDate()+i);
+    const k=fmtDia(d);
+    const div=document.createElement('div');
+    div.className='cday'+(conExamen.has(k)?' tiene':'')+(k===selFecha?' on':'')+(k===hoyStr?' hoy':'');
+    div.innerHTML=`<div class="cdn">${dias[i]}</div><div class="cnum">${d.getDate()}</div>`;
+    div.onclick=()=>{ selFecha=selFecha===k?null:k; renderCal(); render(); };
     cg.appendChild(div);
   }
 }
 
-document.getElementById('bp').onclick = () => { semOff--; fechaSel=null; renderCal(); render(); };
-document.getElementById('bn').onclick = () => { semOff++; fechaSel=null; renderCal(); render(); };
-
-function fmt(d) {
-  return pad(d.getDate())+'/'+pad(d.getMonth()+1)+'/'+d.getFullYear();
-}
-
-// ── TABS LISTA ───────────────────────────────────────────────
+// ── TABS LISTA ────────────────────────────────────────────────
 function buildTabs() {
-  const fechas = [...new Set(datos.map(r=>r.fecha))].sort((a,b)=>pF(a)-pF(b));
-  if (!fechaSel) fechaSel = fechas[0]||null;
-  const cont = document.getElementById('tabs');
-  cont.innerHTML = '';
-  [null,...fechas].forEach(f => {
-    const b = document.createElement('button');
-    b.className = 'tab' + (f===fechaSel ? ' on' : '');
-    b.textContent = f ? fmtTab(f) : 'Todos';
-    b.onclick = () => { fechaSel=f; document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on')); b.classList.add('on'); render(); };
+  const fechas=[...new Set(datos.map(r=>r.fecha))].sort((a,b)=>pF(a)-pF(b));
+  if (!selFecha) selFecha=fechas[0]||null;
+  const cont=document.getElementById('tabs'); cont.innerHTML='';
+  [null,...fechas].forEach(f=>{
+    const b=document.createElement('button');
+    b.className='tab'+(f===selFecha?' on':'');
+    const M=['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+    b.textContent=f?`${parseInt(f.split('/')[0])} ${M[parseInt(f.split('/')[1])]}`:'Todos';
+    b.onclick=()=>{ selFecha=f; document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on')); b.classList.add('on'); render(); };
     cont.appendChild(b);
   });
 }
 
-function fmtTab(f) {
-  const [d,m] = f.split('/');
-  const M = ['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-  return `${parseInt(d)} ${M[parseInt(m)]||m}`;
-}
-function pF(f) { const [d,m,y]=f.split('/'); return new Date(y,m-1,d).getTime(); }
-
-// ── RENDER ───────────────────────────────────────────────────
+// ── RENDER ────────────────────────────────────────────────────
 function render() {
   const bus  = document.getElementById('bus').value.toLowerCase();
   const fnot = document.getElementById('fnot').value;
-
-  // Días de la semana visible
   const lun  = lunesDe(semOff);
   const semD = new Set();
-  for (let i=0;i<7;i++){ const d=new Date(lun); d.setDate(lun.getDate()+i); semD.add(fmt(d)); }
+  for (let i=0;i<7;i++){const d=new Date(lun);d.setDate(lun.getDate()+i);semD.add(fmtDia(d));}
 
-  const fil = datos.filter(r => {
+  const fil = datos.filter(r=>{
     const okF = vista==='sem'
-      ? (fechaSel ? r.fecha===fechaSel : semD.has(r.fecha))
-      : (!fechaSel || r.fecha===fechaSel);
-    const okB = r.aplicador.toLowerCase().includes(bus) ||
-                (r.materia||'').toLowerCase().includes(bus);
-    const on  = notif[k(r)] ? 'SI' : 'NO';
-    return okF && okB && (fnot==='todos' || on===fnot);
+      ? (selFecha ? r.fecha===selFecha : semD.has(r.fecha))
+      : (!selFecha || r.fecha===selFecha);
+    const okB = r.aplicador.toLowerCase().includes(bus)||(r.materia||'').toLowerCase().includes(bus);
+    const on  = notif[k(r)]?'SI':'NO';
+    return okF && okB && (fnot==='todos'||on===fnot);
   });
 
-  const grid = document.getElementById('grid');
-  grid.innerHTML = '';
-
+  const grid=document.getElementById('grid'); grid.innerHTML='';
   if (!fil.length) {
-    const msg = vista==='sem' && !fechaSel ? 'No hay exámenes esta semana.' : 'Sin resultados.';
-    grid.innerHTML = `<div class="empty">📭<br><br>${msg}</div>`;
-    document.getElementById('res').innerHTML = '';
-    return;
+    const msg=vista==='sem'&&!selFecha?'No hay exámenes esta semana.':'Sin resultados.';
+    grid.innerHTML=`<div class="empty">📭<br><br>${msg}</div>`;
+    document.getElementById('res').innerHTML=''; return;
   }
-
-  fil.forEach(r => grid.appendChild(crearCard(r)));
-
-  const n = fil.filter(r=>notif[k(r)]).length;
-  document.getElementById('res').innerHTML =
+  fil.forEach(r=>grid.appendChild(mkCard(r)));
+  const n=fil.filter(r=>notif[k(r)]).length;
+  document.getElementById('res').innerHTML=
     `<span>${fil.length}</span> registro${fil.length!==1?'s':''} · <span>${n}</span> notificado${n!==1?'s':''}`;
 }
 
-// ── CLAVE ────────────────────────────────────────────────────
-function k(r) { return `${r.aplicador}|${r.fecha}|${r.hora}|${r.grupo}`; }
+// ── CLAVE ─────────────────────────────────────────────────────
+function k(r){return `${r.aplicador}|${r.fecha}|${r.hora}|${r.grupo}`;}
 
-// ── TARJETA ──────────────────────────────────────────────────
-function crearCard(r) {
-  const id     = k(r);
-  const ya     = !!notif[id];
-  const nom    = primerNombre(r.aplicador);
-  const tel    = limpTel(r.telefono);
-  const msg    = genMsg(r, nom);
-  const wa     = tel ? `https://wa.me/52${tel}?text=${encodeURIComponent(msg)}` : null;
-
-  const c = document.createElement('div');
-  c.className = 'card';
-  c.innerHTML = `
+// ── TARJETA ───────────────────────────────────────────────────
+function mkCard(r) {
+  const id=k(r), ya=!!notif[id];
+  const n1=primerNombre(r.aplicador);
+  const tel=limpTel(r.telefono);
+  const wa=tel?`https://wa.me/52${tel}?text=${encodeURIComponent(genMsg(r,n1))}`:null;
+  const c=document.createElement('div'); c.className='card';
+  c.innerHTML=`
     <div class="ch">
       <div><div class="cn">${r.aplicador}</div><div class="cm">${r.materia}</div></div>
       <span class="bdg ${ya?'bok':'bno'}">${ya?'✓ Notificado':'⏳ Pendiente'}</span>
@@ -685,47 +423,39 @@ function crearCard(r) {
     </div>
     <div class="cf">
       ${wa
-        ? `<a class="bwa" href="${wa}" target="_blank" onclick="marcar('${id}',this.closest('.card'))">
-             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink:0">
-               <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
-               <path d="M12 0C5.373 0 0 5.373 0 12c0 2.065.527 4.013 1.449 5.715L0 24l6.445-1.43A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.818 9.818 0 01-4.992-1.364l-.359-.214-3.724.826.84-3.635-.235-.374A9.817 9.817 0 012.182 12C2.182 6.584 6.584 2.182 12 2.182S21.818 6.584 21.818 12 17.416 21.818 12 21.818z"/>
-             </svg>Enviar WhatsApp</a>`
-        : `<span class="bwa nt">Sin teléfono registrado</span>`
+        ?`<a class="bwa" href="${wa}" target="_blank" onclick="marcar('${id}',this.closest('.card'))">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink:0">
+              <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+              <path d="M12 0C5.373 0 0 5.373 0 12c0 2.065.527 4.013 1.449 5.715L0 24l6.445-1.43A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.818 9.818 0 01-4.992-1.364l-.359-.214-3.724.826.84-3.635-.235-.374A9.817 9.817 0 012.182 12C2.182 6.584 6.584 2.182 12 2.182S21.818 6.584 21.818 12 17.416 21.818 12 21.818z"/>
+            </svg>Enviar WhatsApp</a>`
+        :`<span class="bwa nt">Sin teléfono registrado</span>`
       }
-      <button class="bnt ${ya?'mk':''}" onclick="toggle('${id}',this)">${ya?'✓':'○'}</button>
+      <button class="bnt ${ya?'mk':''}" onclick="tog('${id}',this)">${ya?'✓':'○'}</button>
     </div>`;
   return c;
 }
 
-function fechaBonita(f) {
-  const fn = normFecha(f);
-  if (!fn || !fn.includes('/')) return f;
-  const [d,m,y] = fn.split('/');
-  const meses = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-  return `${parseInt(d)} ${meses[parseInt(m)-1]} ${y}`;
-}
-
+// ── MENSAJE WA ────────────────────────────────────────────────
 function genMsg(r, n) {
-  const fecha = normFecha(r.fecha);
-  const [d,m,y] = fecha.split('/');
-  const meses = ['enero','febrero','marzo','abril','mayo','junio',
-    'julio','agosto','septiembre','octubre','noviembre','diciembre'];
-  const fechaLinda = `${parseInt(d)} de ${meses[parseInt(m)-1]} de ${y}`;
+  const [d,m,y] = r.fecha.split('/');
+  const M=['enero','febrero','marzo','abril','mayo','junio',
+           'julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  const fLinda = `${parseInt(d)} de ${M[parseInt(m)-1]} de ${y}`;
   return (
-    `Hola ${n}! 😊\n\n` +
-    `Te recuerdo que tienes *aplicación de examen* programada:\n\n` +
-    `📚 *Materia:* ${r.materia}\n` +
-    `👥 *Grupo:* ${r.grupo}\n` +
-    `📅 *Fecha:* ${fechaLinda}\n` +
-    `🕐 *Hora:* ${r.hora}\n` +
-    `🏫 *Aula:* ${r.aula}\n\n` +
+    `Hola ${n}! 😊\n\n`+
+    `Te recuerdo que tienes *aplicación de examen* programada:\n\n`+
+    `📚 *Materia:* ${r.materia}\n`+
+    `👥 *Grupo:* ${r.grupo}\n`+
+    `📅 *Fecha:* ${fLinda}\n`+
+    `🕐 *Hora:* ${r.hora}\n`+
+    `🏫 *Aula:* ${r.aula}\n\n`+
     `Por favor confirma tu asistencia. ¡Muchas gracias! 🙏✨`
   );
 }
 
 function primerNombre(n) {
-  const s = n.replace(/^([A-ZÁÉÍÓÚÜÑ][\w.]+\.?\s+)+/u,'').trim();
-  return s.split(' ')[0] || n.split(' ').slice(-2)[0] || n;
+  const s=n.replace(/^([A-ZÁÉÍÓÚÜÑ][\w.]+\.?\s+)+/u,'').trim();
+  return s.split(' ')[0]||n.split(' ').slice(-2)[0]||n;
 }
 
 function limpTel(t) {
@@ -733,29 +463,24 @@ function limpTel(t) {
   return t.toString().replace(/\D/g,'').replace(/^52/,'').slice(0,10);
 }
 
-function marcar(id, card) {
-  notif[id]=true; guardar();
-  updCard(card,true);
-}
-
-function toggle(id, btn) {
-  const on = !notif[id]; notif[id]=on; guardar();
+// ── NOTIF ─────────────────────────────────────────────────────
+function marcar(id,card){ notif[id]=true; save(); updCard(card,true); }
+function tog(id,btn){
+  const on=!notif[id]; notif[id]=on; save();
   updCard(btn.closest('.card'),on);
   btn.classList.toggle('mk',on); btn.textContent=on?'✓':'○';
 }
-
-function updCard(card,on) {
+function updCard(card,on){
   const b=card.querySelector('.bdg');
   b.className='bdg '+(on?'bok':'bno');
   b.textContent=on?'✓ Notificado':'⏳ Pendiente';
 }
+function save(){ localStorage.setItem(KN,JSON.stringify(notif)); }
 
-function guardar() { localStorage.setItem(KN,JSON.stringify(notif)); }
+// ── PWA ───────────────────────────────────────────────────────
+if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
 
-// ── PWA ──────────────────────────────────────────────────────
-if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
-
-// ── INICIO ───────────────────────────────────────────────────
+// ── INICIO ────────────────────────────────────────────────────
 document.getElementById('cal').style.display  = 'block';
 document.getElementById('tabs').style.display = 'none';
 renderCal();
