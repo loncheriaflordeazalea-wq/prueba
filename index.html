@@ -1,42 +1,446 @@
-const CACHE   = 'examenes-v1';
-const ASSETS  = [
-  './',
-  './index.html',
-  './manifest.json'
-];
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Recordatorios de Examen — UNSIS Enfermería</title>
+  <link rel="manifest" href="manifest.json"/>
+  <meta name="theme-color" content="#0f4c75"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg:      #0b1e2d;
+      --surface: #112233;
+      --surf2:   #162d42;
+      --border:  #1e3d58;
+      --accent:  #1eb9a0;
+      --gold:    #f0a500;
+      --text:    #e2eaf2;
+      --muted:   #7a9ab5;
+      --wa:      #25d366;
+      --danger:  #e05252;
+      --r:       12px;
+      --font:    'DM Sans', sans-serif;
+      --mono:    'DM Mono', monospace;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: var(--font); background: var(--bg); color: var(--text); min-height: 100vh; }
 
-// Instalar: cachear assets estáticos
-self.addEventListener('install', e => {
-  e.waitUntil(
-    caches.open(CACHE).then(c => c.addAll(ASSETS))
-  );
-  self.skipWaiting();
+    /* ── MODAL CONFIGURACIÓN ── */
+    #cfg-overlay {
+      display: none; position: fixed; inset: 0; z-index: 100;
+      background: rgba(0,0,0,.8);
+      align-items: center; justify-content: center; padding: 20px;
+    }
+    #cfg-overlay.visible { display: flex; }
+    #cfg-box {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--r); padding: 28px 24px;
+      width: 100%; max-width: 460px;
+    }
+    #cfg-box h2 { font-size: 1rem; font-weight: 600; color: var(--accent); margin-bottom: 8px; }
+    #cfg-box p  { font-size: .85rem; color: var(--muted); line-height: 1.55; margin-bottom: 18px; }
+    #cfg-input {
+      width: 100%; padding: 10px 14px;
+      background: var(--surf2); border: 1px solid var(--border);
+      border-radius: 8px; color: var(--text);
+      font-family: var(--mono); font-size: .78rem;
+      outline: none; margin-bottom: 10px;
+    }
+    #cfg-input:focus { border-color: var(--accent); }
+    #cfg-error { font-size: .8rem; color: var(--danger); margin-bottom: 12px; display: none; }
+    #btn-guardar {
+      width: 100%; padding: 11px; background: var(--accent);
+      border: none; border-radius: 8px; color: #0b1e2d;
+      font-family: var(--font); font-weight: 600; font-size: .9rem; cursor: pointer;
+    }
+    #btn-guardar:hover { opacity: .9; }
+
+    /* ── HEADER ── */
+    header {
+      background: var(--surface); border-bottom: 1px solid var(--border);
+      padding: 14px 20px; display: flex; align-items: center;
+      justify-content: space-between; position: sticky; top: 0; z-index: 10;
+    }
+    .logo { display: flex; align-items: center; gap: 10px; }
+    .logo-icon {
+      width: 34px; height: 34px; border-radius: 8px; background: var(--accent);
+      display: flex; align-items: center; justify-content: center; font-size: 1.1rem;
+    }
+    .logo-title { font-size: .95rem; font-weight: 600; }
+    .logo-sub   { font-size: .73rem; color: var(--muted); }
+    #btn-cfg {
+      background: var(--surf2); border: 1px solid var(--border);
+      color: var(--muted); border-radius: 8px;
+      padding: 7px 13px; font-size: .78rem; cursor: pointer; font-family: var(--font);
+    }
+    #btn-cfg:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* ── FILTROS ── */
+    .filtros {
+      padding: 12px 20px; display: flex; gap: 10px; flex-wrap: wrap;
+      background: var(--surface); border-bottom: 1px solid var(--border);
+    }
+    .filtros input, .filtros select {
+      background: var(--surf2); border: 1px solid var(--border);
+      border-radius: 8px; color: var(--text); padding: 8px 12px;
+      font-family: var(--font); font-size: .84rem; outline: none; flex: 1; min-width: 140px;
+    }
+    .filtros input:focus, .filtros select:focus { border-color: var(--accent); }
+    .filtros select option { background: var(--surf2); }
+
+    /* ── TABS FECHA ── */
+    .tabs {
+      display: flex; gap: 8px; padding: 12px 20px;
+      overflow-x: auto; -webkit-overflow-scrolling: touch;
+    }
+    .tab {
+      padding: 6px 14px; border-radius: 20px; border: 1px solid var(--border);
+      background: transparent; color: var(--muted); font-family: var(--font);
+      font-size: .82rem; cursor: pointer; white-space: nowrap; transition: all .15s;
+    }
+    .tab.active { background: var(--accent); border-color: var(--accent); color: #0b1e2d; font-weight: 600; }
+    .tab:hover:not(.active) { border-color: var(--accent); color: var(--accent); }
+
+    /* ── STATUS ── */
+    #status { text-align: center; padding: 60px 20px; color: var(--muted); font-size: .9rem; display: none; }
+    #status.visible { display: block; }
+    .spinner {
+      width: 30px; height: 30px; border-radius: 50%;
+      border: 3px solid var(--border); border-top-color: var(--accent);
+      animation: spin .8s linear infinite; margin: 0 auto 14px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── RESUMEN ── */
+    .resumen { padding: 6px 20px 10px; font-size: .8rem; color: var(--muted); }
+    .resumen span { color: var(--accent); font-weight: 600; }
+
+    /* ── GRID ── */
+    #grid {
+      padding: 14px 20px;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 12px;
+    }
+
+    /* ── TARJETA ── */
+    .card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--r); overflow: hidden; transition: border-color .15s;
+    }
+    .card:hover { border-color: var(--accent); }
+    .card-header {
+      padding: 13px 15px 10px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: flex-start; justify-content: space-between; gap: 8px;
+    }
+    .card-nombre { font-size: .88rem; font-weight: 600; line-height: 1.3; }
+    .card-materia { font-size: .77rem; color: var(--muted); margin-top: 2px; }
+    .badge {
+      font-size: .7rem; font-weight: 600; padding: 3px 9px;
+      border-radius: 20px; white-space: nowrap; flex-shrink: 0;
+    }
+    .badge-ok { background: #0d3b2e; color: var(--accent); border: 1px solid #1a5c47; }
+    .badge-no { background: #2e1a0d; color: var(--gold);   border: 1px solid #5c3a1a; }
+
+    .card-body { padding: 11px 15px; display: flex; flex-direction: column; gap: 7px; }
+    .info-row  { display: flex; align-items: center; gap: 8px; font-size: .82rem; color: var(--muted); }
+    .info-icon { font-size: .95rem; flex-shrink: 0; }
+    .info-val  { color: var(--text); }
+
+    .card-footer { padding: 10px 15px 13px; display: flex; gap: 8px; }
+    .btn-wa {
+      flex: 1; padding: 9px; background: var(--wa); border: none;
+      border-radius: 8px; color: #fff; font-family: var(--font); font-weight: 600;
+      font-size: .84rem; cursor: pointer; text-decoration: none;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+      transition: opacity .15s;
+    }
+    .btn-wa:hover { opacity: .88; }
+    .btn-wa.sin-tel {
+      background: var(--surf2); color: var(--muted);
+      border: 1px solid var(--border); cursor: default;
+    }
+    .btn-notif {
+      padding: 9px 13px; border-radius: 8px; background: var(--surf2);
+      border: 1px solid var(--border); color: var(--muted);
+      font-family: var(--font); font-size: .82rem; cursor: pointer; transition: all .15s;
+    }
+    .btn-notif:hover { border-color: var(--accent); color: var(--accent); }
+    .btn-notif.marcado { background: #0d3b2e; border-color: #1a5c47; color: var(--accent); }
+
+    .empty { grid-column: 1/-1; text-align: center; padding: 60px 20px; color: var(--muted); font-size: .9rem; }
+  </style>
+</head>
+<body>
+
+<!-- ══ MODAL CONFIGURACIÓN ══ -->
+<div id="cfg-overlay" class="visible">
+  <div id="cfg-box">
+    <h2>🔐 Configuración</h2>
+    <p>Ingresa la URL de tu Google Apps Script Web App. Se guardará únicamente en este dispositivo y no será visible para nadie más.</p>
+    <input type="url" id="cfg-input"
+      placeholder="https://script.google.com/macros/s/.../exec"
+      autocomplete="off" spellcheck="false"/>
+    <p id="cfg-error">⚠️ URL inválida. Debe iniciar con https://script.google.com</p>
+    <button id="btn-guardar">Guardar y continuar</button>
+  </div>
+</div>
+
+<!-- ══ HEADER ══ -->
+<header>
+  <div class="logo">
+    <div class="logo-icon">📋</div>
+    <div>
+      <div class="logo-title">Exámenes Parciales</div>
+      <div class="logo-sub">UNSIS · Enfermería</div>
+    </div>
+  </div>
+  <button id="btn-cfg" onclick="abrirConfig()">⚙️ Configurar</button>
+</header>
+
+<!-- ══ FILTROS ══ -->
+<div class="filtros">
+  <input type="search" id="buscar" placeholder="🔍  Buscar profesor o materia..." oninput="renderCards()"/>
+  <select id="filtro-notif" onchange="renderCards()">
+    <option value="todos">Todos</option>
+    <option value="NO">Pendientes</option>
+    <option value="SI">Notificados</option>
+  </select>
+</div>
+
+<!-- ══ TABS FECHA ══ -->
+<div class="tabs" id="tabs"></div>
+
+<!-- ══ RESUMEN ══ -->
+<div class="resumen" id="resumen"></div>
+
+<!-- ══ STATUS ══ -->
+<div id="status"><div class="spinner"></div>Cargando datos...</div>
+
+<!-- ══ GRID ══ -->
+<div id="grid"></div>
+
+<script>
+const KEY_URL   = 'examenes_api_url';
+const KEY_NOTIF = 'examenes_notificados';
+
+let todos       = [];
+let fechaActiva = null;
+let notificados = JSON.parse(localStorage.getItem(KEY_NOTIF) || '{}');
+
+// ─── CONFIGURACIÓN ────────────────────────────────────────────
+function getUrl() { return localStorage.getItem(KEY_URL) || ''; }
+
+function abrirConfig() {
+  document.getElementById('cfg-input').value = getUrl();
+  document.getElementById('cfg-error').style.display = 'none';
+  document.getElementById('cfg-overlay').classList.add('visible');
+}
+
+document.getElementById('btn-guardar').addEventListener('click', () => {
+  const url = document.getElementById('cfg-input').value.trim();
+  if (!url.startsWith('https://script.google.com')) {
+    document.getElementById('cfg-error').style.display = 'block';
+    return;
+  }
+  localStorage.setItem(KEY_URL, url);
+  document.getElementById('cfg-overlay').classList.remove('visible');
+  cargarDatos();
 });
 
-// Activar: limpiar caches viejos
-self.addEventListener('activate', e => {
-  e.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
-    )
-  );
-  self.clients.claim();
-});
+if (getUrl()) document.getElementById('cfg-overlay').classList.remove('visible');
 
-// Fetch: network-first para el API, cache-first para assets
-self.addEventListener('fetch', e => {
-  const url = new URL(e.request.url);
+// ─── CARGA ────────────────────────────────────────────────────
+async function cargarDatos() {
+  const url = getUrl();
+  if (!url) return;
+  const status = document.getElementById('status');
+  const grid   = document.getElementById('grid');
+  status.classList.add('visible');
+  grid.innerHTML = '';
+  document.getElementById('tabs').innerHTML = '';
+  document.getElementById('resumen').innerHTML = '';
+  try {
+    const res  = await fetch(url);
+    const data = await res.json();
+    todos = data.filter(r => r.aplicador);
+    status.classList.remove('visible');
+    construirTabs();
+    renderCards();
+  } catch {
+    status.innerHTML = '⚠️ Error al cargar. Verifica la URL en ⚙️ Configurar.';
+  }
+}
 
-  // El API de Google siempre va directo a la red
-  if (url.hostname.includes('script.google.com')) {
-    e.respondWith(fetch(e.request).catch(() =>
-      new Response(JSON.stringify([]), { headers: { 'Content-Type': 'application/json' } })
-    ));
+// ─── TABS ────────────────────────────────────────────────────
+function construirTabs() {
+  const fechas = [...new Set(todos.map(r => r.fecha))].sort((a,b) => parseFecha(a) - parseFecha(b));
+  fechaActiva  = fechas[0] || null;
+  const cont   = document.getElementById('tabs');
+  cont.innerHTML = '';
+  [null, ...fechas].forEach(f => cont.appendChild(crearTab(f)));
+}
+
+function crearTab(valor) {
+  const btn = document.createElement('button');
+  btn.className = 'tab' + (valor === fechaActiva ? ' active' : '');
+  btn.textContent = valor ? formatTab(valor) : 'Todos';
+  btn.onclick = () => {
+    fechaActiva = valor;
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    renderCards();
+  };
+  return btn;
+}
+
+function formatTab(f) {
+  const [d,m] = f.split('/');
+  const meses = ['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  return `${parseInt(d)} ${meses[parseInt(m)] || m}`;
+}
+
+function parseFecha(f) {
+  if (!f) return 0;
+  const [d,m,y] = f.split('/');
+  return new Date(y, m-1, d).getTime();
+}
+
+// ─── RENDER ──────────────────────────────────────────────────
+function renderCards() {
+  const buscar  = document.getElementById('buscar').value.toLowerCase();
+  const filtNot = document.getElementById('filtro-notif').value;
+
+  const filtrados = todos.filter(r => {
+    const okFecha = !fechaActiva || r.fecha === fechaActiva;
+    const okBusq  = r.aplicador.toLowerCase().includes(buscar) ||
+                    r.materia.toLowerCase().includes(buscar);
+    const notif   = notificados[clave(r)] ? 'SI' : 'NO';
+    const okNotif = filtNot === 'todos' || notif === filtNot;
+    return okFecha && okBusq && okNotif;
+  });
+
+  const grid = document.getElementById('grid');
+  grid.innerHTML = '';
+
+  if (!filtrados.length) {
+    grid.innerHTML = '<div class="empty">Sin resultados para este filtro.</div>';
+    document.getElementById('resumen').innerHTML = '';
     return;
   }
 
-  // Assets: cache-first
-  e.respondWith(
-    caches.match(e.request).then(cached => cached || fetch(e.request))
-  );
-});
+  filtrados.forEach(r => grid.appendChild(crearCard(r)));
+
+  const total  = filtrados.length;
+  const nCount = filtrados.filter(r => notificados[clave(r)]).length;
+  document.getElementById('resumen').innerHTML =
+    `<span>${total}</span> registro${total !== 1 ? 's' : ''} · <span>${nCount}</span> notificado${nCount !== 1 ? 's' : ''}`;
+}
+
+// ─── CLAVE ÚNICA ─────────────────────────────────────────────
+function clave(r) { return `${r.aplicador}|${r.fecha}|${r.hora}|${r.grupo}`; }
+
+// ─── TARJETA ─────────────────────────────────────────────────
+function crearCard(r) {
+  const k        = clave(r);
+  const yaNotif  = !!notificados[k];
+  const nombre1  = primerNombre(r.aplicador);
+  const tel      = limpiarTel(r.telefono);
+  const msg      = generarMsg(r, nombre1);
+  const urlWA    = tel ? `https://wa.me/52${tel}?text=${encodeURIComponent(msg)}` : null;
+
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.innerHTML = `
+    <div class="card-header">
+      <div>
+        <div class="card-nombre">${r.aplicador}</div>
+        <div class="card-materia">${r.materia}</div>
+      </div>
+      <span class="badge ${yaNotif ? 'badge-ok' : 'badge-no'}">${yaNotif ? '✓ Notificado' : '⏳ Pendiente'}</span>
+    </div>
+    <div class="card-body">
+      <div class="info-row"><span class="info-icon">📅</span><span class="info-val">${r.fecha}</span></div>
+      <div class="info-row"><span class="info-icon">🕐</span><span class="info-val">${r.hora}</span></div>
+      <div class="info-row"><span class="info-icon">🏫</span><span class="info-val">Aula ${r.aula} · Grupo ${r.grupo}</span></div>
+      ${r.telefono ? `<div class="info-row"><span class="info-icon">📱</span><span class="info-val">${r.telefono}</span></div>` : ''}
+    </div>
+    <div class="card-footer">
+      ${urlWA
+        ? `<a class="btn-wa" href="${urlWA}" target="_blank" onclick="marcarNotif('${k}',this.closest('.card'))">
+             <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink:0">
+               <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+               <path d="M12 0C5.373 0 0 5.373 0 12c0 2.065.527 4.013 1.449 5.715L0 24l6.445-1.43A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.818 9.818 0 01-4.992-1.364l-.359-.214-3.724.826.84-3.635-.235-.374A9.817 9.817 0 012.182 12C2.182 6.584 6.584 2.182 12 2.182S21.818 6.584 21.818 12 17.416 21.818 12 21.818z"/>
+             </svg>
+             Enviar WhatsApp
+           </a>`
+        : `<span class="btn-wa sin-tel">Sin teléfono registrado</span>`
+      }
+      <button class="btn-notif ${yaNotif ? 'marcado' : ''}"
+        onclick="toggleNotif('${k}',this)"
+        title="${yaNotif ? 'Marcar pendiente' : 'Marcar notificado'}">
+        ${yaNotif ? '✓' : '○'}
+      </button>
+    </div>`;
+  return card;
+}
+
+// ─── MENSAJE WHATSAPP ─────────────────────────────────────────
+function generarMsg(r, nombre) {
+  return `Hola ${nombre} 👋, te recuerdo que tienes aplicación de examen programada:\n\n` +
+         `📚 Materia: ${r.materia}\n` +
+         `👥 Grupo: ${r.grupo}\n` +
+         `📅 Fecha: ${r.fecha}\n` +
+         `🕐 Hora: ${r.hora}\n` +
+         `🏫 Aula: ${r.aula}\n\n` +
+         `Por favor confirma tu asistencia. ¡Gracias! 🙏`;
+}
+
+// ─── PRIMER NOMBRE ─────────────────────────────────────────────
+function primerNombre(nombreCompleto) {
+  const sinPrefijo = nombreCompleto.replace(/^([A-Z][\w.]+\.?\s+)+/, '').trim();
+  return sinPrefijo.split(' ')[0] || nombreCompleto.split(' ').at(-2) || nombreCompleto;
+}
+
+// ─── LIMPIAR TELÉFONO ─────────────────────────────────────────
+function limpiarTel(tel) {
+  if (!tel) return '';
+  return tel.toString().replace(/\D/g, '').replace(/^52/, '').slice(0, 10);
+}
+
+// ─── NOTIFICACIONES ───────────────────────────────────────────
+function marcarNotif(k, card) {
+  notificados[k] = true;
+  guardarNotif();
+  card.querySelector('.badge').className = 'badge badge-ok';
+  card.querySelector('.badge').textContent = '✓ Notificado';
+  const btn = card.querySelector('.btn-notif');
+  btn.classList.add('marcado'); btn.textContent = '✓';
+}
+
+function toggleNotif(k, btn) {
+  const on = !notificados[k];
+  notificados[k] = on;
+  guardarNotif();
+  const card  = btn.closest('.card');
+  const badge = card.querySelector('.badge');
+  badge.className   = 'badge ' + (on ? 'badge-ok' : 'badge-no');
+  badge.textContent = on ? '✓ Notificado' : '⏳ Pendiente';
+  btn.classList.toggle('marcado', on);
+  btn.textContent = on ? '✓' : '○';
+}
+
+function guardarNotif() { localStorage.setItem(KEY_NOTIF, JSON.stringify(notificados)); }
+
+// ─── PWA ──────────────────────────────────────────────────────
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
+
+// ─── INICIO ───────────────────────────────────────────────────
+if (getUrl()) cargarDatos();
+</script>
+</body>
+</html>
