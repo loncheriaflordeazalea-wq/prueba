@@ -314,7 +314,7 @@ document.getElementById('bpro').onclick = async () => {
 
   setStat(15, '📊 Leyendo Excel...');
   const buf = await archi.arrayBuffer();
-  const wb  = XLSX.read(buf, { type:'array', cellDates:true });
+  const wb  = XLSX.read(buf, { type:'array', cellDates:false });
   const ws  = wb.Sheets[wb.SheetNames[0]];
   const raw = XLSX.utils.sheet_to_json(ws, { header:1, defval:'' });
 
@@ -429,44 +429,54 @@ function parsearExcel(rows) {
 }
 
 function parseFechaVal(v) {
-  if (!v) return '';
-  // Si es objeto Date de SheetJS (cellDates:true)
-  if (v instanceof Date || (typeof v === 'object' && v.getTime)) {
-    const d = new Date(v);
-    return pad(d.getDate())+'/'+pad(d.getMonth()+1)+'/'+d.getFullYear();
+  if (!v && v !== 0) return '';
+  // Date object de SheetJS (cellDates:true) — usar UTC para evitar zona horaria
+  if (v instanceof Date) {
+    return pad(v.getUTCDate())+'/'+pad(v.getUTCMonth()+1)+'/'+v.getUTCFullYear();
   }
-  // Si viene como string de fecha ISO
-  if (typeof v === 'string' && v.match(/\d{4}-\d{2}-\d{2}/)) {
-    const d = new Date(v);
-    return pad(d.getDate())+'/'+pad(d.getMonth()+1)+'/'+d.getFullYear();
+  const s = v.toString().trim();
+  // Ya viene dd/MM/yyyy con ceros
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(s)) return s;
+  // d/M/yyyy sin ceros
+  if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(s)) {
+    const [d,m,y] = s.split('/');
+    return pad(d)+'/'+pad(m)+'/'+y;
   }
-  // Si ya viene como dd/mm/yyyy
-  if (typeof v === 'string' && v.match(/\d{2}\/\d{2}\/\d{4}/)) return v;
+  // ISO: 2026-05-07 o 2026-05-07T00:00:00
+  if (/^\d{4}-\d{2}-\d{2}/.test(s)) {
+    const [y,m,d] = s.slice(0,10).split('-');
+    return pad(d)+'/'+pad(m)+'/'+y;
+  }
   // Serial numérico de Excel
-  const n = parseFloat(v);
-  if (!isNaN(n)) {
+  const n = parseFloat(s);
+  if (!isNaN(n) && n > 40000) {
     const d = new Date((n-25569)*86400*1000);
-    const u = new Date(d.getTime()+d.getTimezoneOffset()*60000);
-    return pad(u.getDate())+'/'+pad(u.getMonth()+1)+'/'+u.getFullYear();
+    return pad(d.getUTCDate())+'/'+pad(d.getUTCMonth()+1)+'/'+d.getUTCFullYear();
   }
-  return v.toString();
+  return s;
 }
 
 function pad(n) { return String(n).padStart(2,'0'); }
 
 function normFecha(f) {
   if (!f) return '';
-  f = f.toString().trim();
-  if (/^\d{2}\/\d{2}\/\d{4}$/.test(f)) return f;
-  if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(f)) {
-    const [d,m,y] = f.split('/');
-    return pad(d)+'/'+pad(m)+'/'+y;
+  // Date object
+  if (f instanceof Date) return pad(f.getUTCDate())+'/'+pad(f.getUTCMonth()+1)+'/'+f.getUTCFullYear();
+  const s = f.toString().trim();
+  // dd/MM/yyyy perfecto
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(s)) return s;
+  // d/M/yyyy sin ceros
+  if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(s)) {
+    const [d,m,y] = s.split('/'); return pad(d)+'/'+pad(m)+'/'+y;
   }
-  if (/^\d{4}-\d{2}-\d{2}/.test(f)) {
-    const dt = new Date(f);
-    return pad(dt.getUTCDate())+'/'+pad(dt.getUTCMonth()+1)+'/'+dt.getUTCFullYear();
+  // ISO o con hora: 2026-05-07... o Thu May 07 2026...
+  if (/^\d{4}-\d{2}-\d{2}/.test(s)) {
+    const [y,m,d] = s.slice(0,10).split('-'); return pad(d)+'/'+pad(m)+'/'+y;
   }
-  return f;
+  // Fallback Date parse (para strings como "Thu May 07 2026 00:00:00")
+  const dt = new Date(s);
+  if (!isNaN(dt.getTime())) return pad(dt.getUTCDate())+'/'+pad(dt.getUTCMonth()+1)+'/'+dt.getUTCFullYear();
+  return s;
 }
 
 function splitAps(celda) {
@@ -668,7 +678,7 @@ function crearCard(r) {
       <span class="bdg ${ya?'bok':'bno'}">${ya?'✓ Notificado':'⏳ Pendiente'}</span>
     </div>
     <div class="cb">
-      <div class="ir"><span class="ii">📅</span><span class="iv">${r.fecha}</span></div>
+      <div class="ir"><span class="ii">📅</span><span class="iv">${fechaBonita(r.fecha)}</span></div>
       <div class="ir"><span class="ii">🕐</span><span class="iv">${r.hora}</span></div>
       <div class="ir"><span class="ii">🏫</span><span class="iv">Aula ${r.aula} · Grupo ${r.grupo}</span></div>
       ${r.telefono?`<div class="ir"><span class="ii">📱</span><span class="iv">${r.telefono}</span></div>`:''}
@@ -687,11 +697,30 @@ function crearCard(r) {
   return c;
 }
 
+function fechaBonita(f) {
+  const fn = normFecha(f);
+  if (!fn || !fn.includes('/')) return f;
+  const [d,m,y] = fn.split('/');
+  const meses = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  return `${parseInt(d)} ${meses[parseInt(m)-1]} ${y}`;
+}
+
 function genMsg(r, n) {
-  return `Hola ${n} 👋, te recuerdo que tienes aplicación de examen programada:\n\n` +
-    `📚 Materia: ${r.materia}\n👥 Grupo: ${r.grupo}\n` +
-    `📅 Fecha: ${r.fecha}\n🕐 Hora: ${r.hora}\n🏫 Aula: ${r.aula}\n\n` +
-    `Por favor confirma tu asistencia. ¡Gracias! 🙏`;
+  const fecha = normFecha(r.fecha);
+  const [d,m,y] = fecha.split('/');
+  const meses = ['enero','febrero','marzo','abril','mayo','junio',
+    'julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  const fechaLinda = `${parseInt(d)} de ${meses[parseInt(m)-1]} de ${y}`;
+  return (
+    `Hola ${n}! 😊\n\n` +
+    `Te recuerdo que tienes *aplicación de examen* programada:\n\n` +
+    `📚 *Materia:* ${r.materia}\n` +
+    `👥 *Grupo:* ${r.grupo}\n` +
+    `📅 *Fecha:* ${fechaLinda}\n` +
+    `🕐 *Hora:* ${r.hora}\n` +
+    `🏫 *Aula:* ${r.aula}\n\n` +
+    `Por favor confirma tu asistencia. ¡Muchas gracias! 🙏✨`
+  );
 }
 
 function primerNombre(n) {
