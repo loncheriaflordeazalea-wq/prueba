@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Exámenes Parciales — UNSIS</title>
+  <title>Programación de Exámenes</title>
   <link rel="manifest" href="manifest.json"/>
   <meta name="theme-color" content="#0b1e2d"/>
   <meta name="apple-mobile-web-app-capable" content="yes"/>
@@ -148,6 +148,13 @@
     .bnt.mk{background:#0d3b2e;border-color:#1a5c47;color:var(--acc)}
 
     .empty{grid-column:1/-1;text-align:center;padding:50px 20px;color:var(--mut);font-size:.88rem}
+    .cextra{padding:0 13px 12px}
+    .bcopy{width:100%;padding:8px;background:transparent;border:1px solid var(--bor);
+           border-radius:8px;color:var(--mut);font-family:var(--f);font-size:.76rem;
+           cursor:pointer;transition:all .15s;display:flex;align-items:center;
+           justify-content:center;gap:5px}
+    .bcopy:hover{border-color:var(--gol);color:var(--gol)}
+    .bcopy.ok{border-color:var(--acc);color:var(--acc)}
   </style>
 </head>
 <body>
@@ -169,10 +176,10 @@
 <header>
   <div class="logo">
     <div class="lic">📋</div>
-    <div><div class="lt">Exámenes Parciales</div><div class="ls">UNSIS · Enfermería</div></div>
+    <div><div class="lt">Programación de Exámenes</div></div>
   </div>
   <div class="hact">
-    <button class="bhi" onclick="cargar()">↺ Actualizar</button>
+    <button class="bhi" onclick="cargar()">↺</button>
     <button class="bhi" onclick="abrirCfg()">⚙️</button>
   </div>
 </header>
@@ -461,6 +468,11 @@ function mkCard(r){
         :`<span class="bmail nt">Sin correo</span>`
       }
       <button class="bnt ${ya?'mk':''}" onclick="tog('${id}',this)">${ya?'✓':'○'}</button>
+    </div>
+    <div class="cextra">
+      <button class="bcopy" onclick="copiarMsg(this,'${id}',event)">
+        📋 Copiar mensaje para WhatsApp
+      </button>
     </div>`;
   return c;
 }
@@ -496,6 +508,29 @@ function msgMail(r,n){
     `Quedo a sus órdenes.\n\n`+
     `Coordinación Académica\nUNSIS · Enfermería`
   );
+}
+
+// ── COPIAR MENSAJE ───────────────────────────────────────────
+function copiarMsg(btn, id, e){
+  e.stopPropagation();
+  const r = datos.find(x => k(x) === id);
+  if(!r) return;
+  const texto = msgWA(r, primerNombre(r.aplicador));
+  navigator.clipboard.writeText(texto).then(()=>{
+    btn.classList.add('ok');
+    btn.textContent = '✓ Copiado — abre WhatsApp y pégalo';
+    setTimeout(()=>{ btn.classList.remove('ok'); btn.textContent='📋 Copiar mensaje para WhatsApp'; }, 3000);
+  }).catch(()=>{
+    // Fallback para móviles que bloquean clipboard
+    const ta = document.createElement('textarea');
+    ta.value = texto; ta.style.position='fixed'; ta.style.opacity='0';
+    document.body.appendChild(ta); ta.focus(); ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    btn.classList.add('ok');
+    btn.textContent = '✓ Copiado — abre WhatsApp y pégalo';
+    setTimeout(()=>{ btn.classList.remove('ok'); btn.textContent='📋 Copiar mensaje para WhatsApp'; }, 3000);
+  });
 }
 
 // ── UTILIDADES ────────────────────────────────────────────────
