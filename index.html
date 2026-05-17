@@ -535,8 +535,23 @@ function copiarMsg(btn, id, e){
 
 // ── UTILIDADES ────────────────────────────────────────────────
 function primerNombre(n){
-  const s=n.replace(/^([A-ZÁÉÍÓÚÜÑ][\w.]+\.?\s+)+/u,'').trim();
-  return s.split(' ')[0]||n.split(' ').slice(-2)[0]||n;
+  const PREF = ['L.E.','M.C.','Dr.','Dra.','M.E.','M.S.P.','E.E.P.','E.E.N.',
+    'E.E.S.M.P.','M.R.N.','M.T.H.E.Q.','M.C.I.B.','M.C.E.','M.B.E.',
+    'M.C.C.A.R.B.','M.E.D.','M.A.S.E.','M.I.T.I.','L.N.','M.C.E.E.U.',
+    'Méd.','Mtra.','M.D.G.P.L.','M.E.S.','M.C.A.C.','E.E.','E.E.N.'];
+  const SKIP = new Set(['del','de','la','los','las','el','y']);
+  const tokens = n.trim().split(/\s+/);
+  let i = 0;
+  // Saltar prefijos académicos
+  while(i < tokens.length){
+    const t = tokens[i];
+    if(PREF.includes(t) || (/\./.test(t) && /^[A-ZÁÉÍÓÚÜÑ]/.test(t)))
+      i++;
+    else break;
+  }
+  // Saltar artículos (del, de, la...)
+  while(i < tokens.length && SKIP.has(tokens[i].toLowerCase())) i++;
+  return tokens[i] || tokens[tokens.length-1] || n;
 }
 
 function limpTel(t){
