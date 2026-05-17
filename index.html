@@ -558,8 +558,7 @@ function updCard(card,on){
 }
 function save(){localStorage.setItem(KN,JSON.stringify(notif));}
 
-// ── PWA ───────────────────────────────────────────────────────
-if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
+// PWA desactivado temporalmente
 
 // ── INICIO ────────────────────────────────────────────────────
 document.getElementById('cal').style.display='block';
