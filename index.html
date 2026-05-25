@@ -1,585 +1,754 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Programación de Exámenes</title>
-  <link rel="manifest" href="manifest.json"/>
-  <meta name="theme-color" content="#0b1e2d"/>
-  <meta name="apple-mobile-web-app-capable" content="yes"/>
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
-  <link rel="preconnect" href="https://fonts.googleapis.com"/>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
-  <style>
-    :root{
-      --bg:#0b1e2d;--sur:#112233;--sur2:#162d42;--bor:#1e3d58;
-      --acc:#1eb9a0;--gol:#f0a500;--txt:#e2eaf2;--mut:#7a9ab5;
-      --wa:#25d366;--mail:#4a90d9;--dan:#e05252;--r:12px;--f:'DM Sans',sans-serif;
-    }
-    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-    body{font-family:var(--f);background:var(--bg);color:var(--txt);min-height:100vh}
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>KDS · Kitchen Display System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    /* ── MODAL ── */
-    .ovl{display:none;position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.85);
-         align-items:center;justify-content:center;padding:16px}
-    .ovl.on{display:flex}
-    .mbox{background:var(--sur);border:1px solid var(--bor);border-radius:var(--r);
-          padding:26px 22px;width:100%;max-width:460px}
-    .mbox h2{font-size:.97rem;font-weight:600;color:var(--acc);margin-bottom:8px}
-    .mbox p{font-size:.83rem;color:var(--mut);line-height:1.55;margin-bottom:14px}
-    .inp{width:100%;padding:10px 13px;background:var(--sur2);border:1px solid var(--bor);
-         border-radius:8px;color:var(--txt);font-size:.78rem;font-family:monospace;
-         outline:none;margin-bottom:9px}
-    .inp:focus{border-color:var(--acc)}
-    .merr{font-size:.78rem;color:var(--dan);margin-bottom:10px;display:none}
-    .btnp{width:100%;padding:11px;background:var(--acc);border:none;border-radius:8px;
-          color:#0b1e2d;font-family:var(--f);font-weight:600;font-size:.88rem;cursor:pointer}
-    .btnp:hover{opacity:.9}
+:root {
+  --bg:        #0A0A0F;
+  --surface:   #13131A;
+  --surface2:  #1C1C26;
+  --border:    rgba(255,255,255,0.07);
+  --border2:   rgba(255,255,255,0.12);
+  --text:      #F0EDE8;
+  --text2:     #8A8799;
+  --text3:     #4A4860;
+  --green:     #3DDC84;
+  --green-dim: rgba(61,220,132,0.12);
+  --amber:     #FFB547;
+  --amber-dim: rgba(255,181,71,0.12);
+  --red:       #FF5C5C;
+  --red-dim:   rgba(255,92,92,0.10);
+  --blue:      #4F9EFF;
+  --blue-dim:  rgba(79,158,255,0.12);
+  --radius:    14px;
+  --radius-sm: 8px;
+  font-family: 'Space Grotesk', sans-serif;
+}
 
-    /* ── HEADER ── */
-    header{background:var(--sur);border-bottom:1px solid var(--bor);
-           padding:11px 15px;display:flex;align-items:center;
-           justify-content:space-between;position:sticky;top:0;z-index:10}
-    .logo{display:flex;align-items:center;gap:9px}
-    .lic{width:31px;height:31px;border-radius:8px;background:var(--acc);
-         display:flex;align-items:center;justify-content:center;font-size:.95rem}
-    .lt{font-size:.88rem;font-weight:600}
-    .ls{font-size:.68rem;color:var(--mut)}
-    .hact{display:flex;gap:7px}
-    .bhi{background:var(--sur2);border:1px solid var(--bor);color:var(--mut);
-         border-radius:8px;padding:7px 11px;font-size:.76rem;cursor:pointer;
-         font-family:var(--f);white-space:nowrap;transition:all .15s}
-    .bhi:hover{border-color:var(--acc);color:var(--acc)}
+body { background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; }
 
-    /* ── FILTROS ── */
-    .fil{padding:9px 15px;display:flex;gap:8px;flex-wrap:wrap;
-         background:var(--sur);border-bottom:1px solid var(--bor)}
-    .fil input,.fil select{background:var(--sur2);border:1px solid var(--bor);
-      border-radius:8px;color:var(--txt);padding:8px 11px;
-      font-family:var(--f);font-size:.82rem;outline:none;flex:1;min-width:120px}
-    .fil input:focus,.fil select:focus{border-color:var(--acc)}
-    .fil select option{background:var(--sur2)}
+/* ── SETUP ── */
+#setup-screen {
+  min-height: 100vh; display: flex;
+  align-items: center; justify-content: center; padding: 24px;
+}
+.setup-card {
+  background: var(--surface); border: 1px solid var(--border2);
+  border-radius: 20px; padding: 40px; width: 100%; max-width: 480px;
+}
+.setup-logo { text-align: center; margin-bottom: 32px; }
+.setup-logo .icon {
+  width: 64px; height: 64px; background: var(--green-dim);
+  border: 1px solid rgba(61,220,132,0.3); border-radius: 16px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 28px; margin: 0 auto 16px;
+}
+.setup-logo h1 { font-size: 22px; font-weight: 700; letter-spacing: -0.3px; }
+.setup-logo p  { font-size: 13px; color: var(--text2); margin-top: 4px; }
+.setup-field { margin-bottom: 20px; }
+.setup-field label {
+  display: block; font-size: 11px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.08em; color: var(--text2); margin-bottom: 8px;
+}
+.setup-field input {
+  width: 100%; padding: 12px 16px; background: var(--surface2);
+  border: 1px solid var(--border2); border-radius: var(--radius-sm);
+  color: var(--text); font-family: 'Space Mono', monospace; font-size: 12px;
+  outline: none; transition: border-color 0.2s;
+}
+.setup-field input:focus { border-color: var(--green); }
+.setup-field input::placeholder { color: var(--text3); }
+.setup-hint { font-size: 11px; color: var(--text3); margin-top: 6px; line-height: 1.6; }
+.btn-setup {
+  width: 100%; padding: 14px; background: var(--green); color: #0A0A0F;
+  border: none; border-radius: var(--radius-sm); font-family: 'Space Grotesk', sans-serif;
+  font-weight: 700; font-size: 15px; cursor: pointer; transition: opacity 0.15s, transform 0.15s;
+  margin-top: 8px;
+}
+.btn-setup:hover { opacity: 0.88; transform: translateY(-1px); }
+.btn-setup:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+.setup-error {
+  background: var(--red-dim); border: 1px solid rgba(255,92,92,0.25);
+  border-radius: var(--radius-sm); padding: 12px 16px;
+  font-size: 13px; color: var(--red); margin-top: 16px; display: none;
+}
 
-    /* ── VISTA BAR ── */
-    .vbar{padding:9px 15px;background:var(--sur);border-bottom:1px solid var(--bor);
-          display:flex;align-items:center;gap:8px}
-    .vtog{display:flex;border:1px solid var(--bor);border-radius:8px;overflow:hidden}
-    .vbtn{padding:6px 13px;background:transparent;border:none;color:var(--mut);
-          font-family:var(--f);font-size:.78rem;cursor:pointer;transition:all .15s}
-    .vbtn.on{background:var(--acc);color:#0b1e2d;font-weight:600}
-    .tscroll{flex:1;display:flex;gap:6px;overflow-x:auto;-webkit-overflow-scrolling:touch}
-    .tab{padding:5px 12px;border-radius:16px;border:1px solid var(--bor);
-         background:transparent;color:var(--mut);font-family:var(--f);
-         font-size:.79rem;cursor:pointer;white-space:nowrap;transition:all .15s;flex-shrink:0}
-    .tab.on{background:var(--acc);border-color:var(--acc);color:#0b1e2d;font-weight:600}
-    .tab:hover:not(.on){border-color:var(--acc);color:var(--acc)}
+/* ── KDS APP ── */
+#app { display: none; height: 100vh; flex-direction: column; }
 
-    /* ── CALENDARIO ── */
-    .calh{display:flex;align-items:center;justify-content:space-between;padding:9px 15px}
-    .cnav{background:var(--sur2);border:1px solid var(--bor);color:var(--mut);
-          border-radius:8px;padding:6px 14px;font-family:var(--f);font-size:.82rem;cursor:pointer}
-    .cnav:hover{border-color:var(--acc);color:var(--acc)}
-    .clab{font-size:.86rem;font-weight:500}
-    .cgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;padding:0 15px 9px}
-    .cday{text-align:center;padding:8px 3px;border-radius:8px;
-          border:1px solid var(--bor);cursor:pointer;transition:all .15s;user-select:none}
-    .cday:hover{border-color:var(--acc)}
-    .cday.on{background:var(--acc);border-color:var(--acc)}
-    .cdn{font-size:.62rem;color:var(--mut);text-transform:uppercase;margin-bottom:3px}
-    .cday.on .cdn,.cday.on .cnum{color:#0b1e2d}
-    .cnum{font-size:.9rem;font-weight:600}
-    .cday.hoy:not(.on) .cnum{color:var(--acc)}
-    .cday.tiene::after{content:'';display:block;width:5px;height:5px;
-      background:var(--gol);border-radius:50%;margin:3px auto 0}
-    .cday.on.tiene::after{background:#0b1e2d}
+.kds-header {
+  background: var(--surface); border-bottom: 1px solid var(--border);
+  padding: 0 20px; height: 56px;
+  display: flex; align-items: center; gap: 16px; flex-shrink: 0;
+}
+.kds-header-logo {
+  font-size: 14px; font-weight: 700; color: var(--green);
+  display: flex; align-items: center; gap: 8px;
+}
+.live-dot {
+  width: 8px; height: 8px; border-radius: 50%; background: var(--green);
+  box-shadow: 0 0 8px var(--green); animation: blink 2s infinite;
+}
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.35} }
+.header-spacer { flex: 1; }
+.header-time { font-family: 'Space Mono', monospace; font-size: 12px; color: var(--text2); }
+.btn-icon {
+  background: var(--surface2); border: 1px solid var(--border2); color: var(--text2);
+  border-radius: 8px; padding: 6px 14px; font-size: 12px; cursor: pointer;
+  font-family: inherit; transition: all 0.15s;
+}
+.btn-icon:hover { color: var(--text); border-color: rgba(255,255,255,0.2); }
 
-    /* ── STATUS ── */
-    #status{text-align:center;padding:50px 20px;color:var(--mut);font-size:.88rem;display:none}
-    #status.on{display:block}
-    .spin{width:28px;height:28px;border-radius:50%;border:3px solid var(--bor);
-          border-top-color:var(--acc);animation:sp .8s linear infinite;margin:0 auto 12px}
-    @keyframes sp{to{transform:rotate(360deg)}}
+.kds-body { display: flex; flex: 1; overflow: hidden; }
 
-    /* ── RESUMEN ── */
-    .res{padding:5px 15px 8px;font-size:.77rem;color:var(--mut)}
-    .res span{color:var(--acc);font-weight:600}
+/* Sidebar */
+.kds-sidebar {
+  width: 240px; background: var(--surface); border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; overflow: hidden; flex-shrink: 0;
+}
+.sidebar-search { padding: 12px; border-bottom: 1px solid var(--border); }
+.sidebar-search input {
+  width: 100%; padding: 8px 12px; background: var(--surface2);
+  border: 1px solid var(--border2); border-radius: var(--radius-sm);
+  color: var(--text); font-family: inherit; font-size: 13px; outline: none;
+  transition: border-color 0.2s;
+}
+.sidebar-search input:focus { border-color: var(--green); }
+.sidebar-search input::placeholder { color: var(--text3); }
+.sidebar-filters { padding: 8px 12px; border-bottom: 1px solid var(--border); display: flex; gap: 6px; flex-wrap: wrap; }
+.filter-chip {
+  padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600;
+  cursor: pointer; border: 1px solid var(--border2); color: var(--text2);
+  background: none; font-family: inherit; transition: all 0.15s;
+}
+.filter-chip.active { background: var(--green-dim); border-color: rgba(61,220,132,0.4); color: var(--green); }
+.recipe-list { flex: 1; overflow-y: auto; padding: 8px; }
+.recipe-list::-webkit-scrollbar { width: 3px; }
+.recipe-list::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+.recipe-item {
+  padding: 10px 12px; border-radius: var(--radius-sm); cursor: pointer;
+  transition: all 0.15s; border: 1px solid transparent; margin-bottom: 2px;
+}
+.recipe-item:hover { background: var(--surface2); border-color: var(--border); }
+.recipe-item.active { background: var(--green-dim); border-color: rgba(61,220,132,0.3); }
+.recipe-item-name { font-size: 13px; font-weight: 500; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.recipe-item.active .recipe-item-name { color: var(--green); }
+.recipe-item-type { font-size: 11px; color: var(--text2); margin-top: 2px; }
+.sidebar-empty { padding: 32px 12px; text-align: center; font-size: 12px; color: var(--text3); }
 
-    /* ── GRID ── */
-    #grid{padding:11px 15px;display:grid;
-          grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px}
+/* Main */
+.kds-main { flex: 1; overflow-y: auto; padding: 24px; }
+.kds-main::-webkit-scrollbar { width: 5px; }
+.kds-main::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
 
-    /* ── TARJETA ── */
-    .card{background:var(--sur);border:1px solid var(--bor);
-          border-radius:var(--r);overflow:hidden;transition:border-color .15s}
-    .card:hover{border-color:var(--acc)}
-    .ch{padding:11px 13px 9px;border-bottom:1px solid var(--bor);
-        display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
-    .cn{font-size:.86rem;font-weight:600;line-height:1.3}
-    .cm{font-size:.74rem;color:var(--mut);margin-top:2px}
-    .bdg{font-size:.67rem;font-weight:600;padding:3px 8px;border-radius:20px;white-space:nowrap;flex-shrink:0}
-    .bok{background:#0d3b2e;color:var(--acc);border:1px solid #1a5c47}
-    .bno{background:#2e1a0d;color:var(--gol);border:1px solid #5c3a1a}
-    .cb{padding:9px 13px;display:flex;flex-direction:column;gap:6px}
-    .ir{display:flex;align-items:center;gap:7px;font-size:.8rem;color:var(--mut)}
-    .ii{font-size:.88rem;flex-shrink:0}
-    .iv{color:var(--txt)}
+.kds-empty {
+  height: 100%; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 12px; text-align: center;
+}
+.kds-empty .big-icon { font-size: 52px; opacity: 0.25; }
+.kds-empty h2 { font-size: 18px; color: var(--text2); font-weight: 600; }
+.kds-empty p  { font-size: 13px; color: var(--text3); max-width: 260px; line-height: 1.6; }
 
-    /* ── FOOTER TARJETA: 3 botones ── */
-    .cf{padding:8px 13px 12px;display:flex;gap:6px}
-    /* WhatsApp */
-    .bwa{flex:1;padding:9px 6px;background:var(--wa);border:none;border-radius:8px;
-         color:#fff;font-family:var(--f);font-weight:600;font-size:.78rem;cursor:pointer;
-         text-decoration:none;display:flex;align-items:center;justify-content:center;
-         gap:4px;transition:opacity .15s;white-space:nowrap}
-    .bwa:hover{opacity:.88}
-    .bwa.nt{background:var(--sur2);color:var(--mut);border:1px solid var(--bor);cursor:default}
-    /* Email */
-    .bmail{flex:1;padding:9px 6px;background:var(--mail);border:none;border-radius:8px;
-           color:#fff;font-family:var(--f);font-weight:600;font-size:.78rem;cursor:pointer;
-           text-decoration:none;display:flex;align-items:center;justify-content:center;
-           gap:4px;transition:opacity .15s;white-space:nowrap}
-    .bmail:hover{opacity:.88}
-    .bmail.nt{background:var(--sur2);color:var(--mut);border:1px solid var(--bor);cursor:default}
-    /* Notificado */
-    .bnt{padding:9px 10px;border-radius:8px;background:var(--sur2);
-         border:1px solid var(--bor);color:var(--mut);font-family:var(--f);
-         font-size:.82rem;cursor:pointer;transition:all .15s;flex-shrink:0}
-    .bnt:hover{border-color:var(--acc);color:var(--acc)}
-    .bnt.mk{background:#0d3b2e;border-color:#1a5c47;color:var(--acc)}
+/* Recipe detail */
+.recipe-header { display: flex; align-items: flex-start; gap: 20px; margin-bottom: 28px; }
+.recipe-image {
+  width: 88px; height: 88px; border-radius: 14px; background: var(--surface2);
+  flex-shrink: 0; overflow: hidden; border: 1px solid var(--border2);
+  display: flex; align-items: center; justify-content: center; font-size: 36px;
+}
+.recipe-image img { width: 100%; height: 100%; object-fit: cover; }
+.recipe-name { font-size: 26px; font-weight: 700; letter-spacing: -0.5px; line-height: 1.2; }
+.recipe-badges { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; align-items: center; }
+.badge { padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+.badge-green { background: var(--green-dim); color: var(--green); border: 1px solid rgba(61,220,132,0.25); }
+.badge-amber { background: var(--amber-dim); color: var(--amber); border: 1px solid rgba(255,181,71,0.25); }
+.badge-blue  { background: var(--blue-dim);  color: var(--blue);  border: 1px solid rgba(79,158,255,0.25); }
+.badge-gray  { background: rgba(255,255,255,0.05); color: var(--text2); }
 
-    .empty{grid-column:1/-1;text-align:center;padding:50px 20px;color:var(--mut);font-size:.88rem}
-    .cextra{padding:0 13px 12px}
-    .bcopy{width:100%;padding:8px;background:transparent;border:1px solid var(--bor);
-           border-radius:8px;color:var(--mut);font-family:var(--f);font-size:.76rem;
-           cursor:pointer;transition:all .15s;display:flex;align-items:center;
-           justify-content:center;gap:5px}
-    .bcopy:hover{border-color:var(--gol);color:var(--gol)}
-    .bcopy.ok{border-color:var(--acc);color:var(--acc)}
-  </style>
+.recipe-notes {
+  background: var(--amber-dim); border: 1px solid rgba(255,181,71,0.22);
+  border-radius: var(--radius-sm); padding: 12px 16px;
+  font-size: 13px; color: var(--amber); margin-bottom: 24px;
+  display: flex; gap: 10px; align-items: flex-start; line-height: 1.55;
+}
+
+.section-title {
+  font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em;
+  color: var(--text3); margin-bottom: 12px; display: flex; align-items: center; gap: 8px;
+}
+.section-title::after { content:''; flex:1; height:1px; background:var(--border); }
+
+.ingredients-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(195px, 1fr));
+  gap: 10px; margin-bottom: 28px;
+}
+.ingredient-card {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 14px 16px;
+}
+.ingredient-card.is-proceso  { border-left: 3px solid var(--amber); }
+.ingredient-card.is-subreceta { border-left: 3px solid var(--blue); }
+.ingredient-qty { font-family: 'Space Mono', monospace; font-size: 22px; font-weight: 700; }
+.ingredient-unit { font-size: 12px; color: var(--text2); margin-left: 4px; }
+.ingredient-name { font-size: 13px; font-weight: 500; margin-top: 6px; }
+.ingredient-meta { font-size: 11px; color: var(--text3); margin-top: 4px; display: flex; gap: 6px; }
+.merma-pill { background: var(--red-dim); color: var(--red); padding: 1px 7px; border-radius: 10px; font-size: 10px; font-weight: 600; }
+
+/* Progress */
+.recipe-progress {
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 14px 18px; margin-bottom: 20px;
+  display: flex; align-items: center; gap: 16px;
+}
+.progress-bar-outer { flex: 1; height: 5px; background: var(--surface); border-radius: 3px; overflow: hidden; }
+.progress-bar-inner { height: 100%; background: var(--green); border-radius: 3px; transition: width 0.35s ease; }
+.progress-pct { font-family: 'Space Mono', monospace; font-size: 12px; color: var(--green); min-width: 48px; text-align: right; }
+
+/* Timer */
+.timer-widget {
+  background: var(--surface2); border: 1px solid var(--border2);
+  border-radius: var(--radius); padding: 14px 18px; margin-bottom: 24px;
+  display: flex; align-items: center; gap: 16px;
+}
+.timer-display { font-family: 'Space Mono', monospace; font-size: 30px; font-weight: 700; color: var(--green); min-width: 90px; }
+.timer-label { font-size: 12px; color: var(--text2); flex: 1; }
+.timer-btns { display: flex; gap: 8px; }
+.tbtn {
+  padding: 8px 16px; border-radius: var(--radius-sm); font-size: 13px;
+  font-weight: 600; cursor: pointer; border: none; font-family: inherit; transition: opacity 0.15s;
+}
+.tbtn:hover { opacity: 0.75; }
+.tbtn-start  { background: var(--green); color: #0A0A0F; }
+.tbtn-pause  { background: var(--amber-dim); color: var(--amber); border: 1px solid rgba(255,181,71,0.3); }
+.tbtn-reset  { background: var(--surface); color: var(--text2); border: 1px solid var(--border2); }
+
+/* Steps */
+.step-card {
+  display: flex; gap: 16px; align-items: flex-start; padding: 14px 16px;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: var(--radius); margin-bottom: 8px; cursor: pointer; transition: all 0.15s;
+}
+.step-card:hover { border-color: var(--border2); }
+.step-card.done { opacity: 0.42; background: var(--surface); }
+.step-card.active { border-color: rgba(61,220,132,0.4); background: var(--green-dim); }
+.step-num {
+  width: 30px; height: 30px; border-radius: 50%; background: var(--surface);
+  border: 1px solid var(--border2); display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700; color: var(--text2); flex-shrink: 0; transition: all 0.2s;
+}
+.step-card.done   .step-num { background: var(--green-dim); color: var(--green); border-color: rgba(61,220,132,0.3); }
+.step-card.active .step-num { background: var(--green); color: #0A0A0F; border-color: var(--green); }
+.step-text { font-size: 14px; color: var(--text); line-height: 1.6; flex: 1; padding-top: 3px; }
+.step-card.done .step-text { text-decoration: line-through; color: var(--text3); }
+.step-chk {
+  width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid var(--border2);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; margin-top: 4px; font-size: 11px; transition: all 0.2s;
+}
+.step-card.done .step-chk { background: var(--green); border-color: var(--green); color: #0A0A0F; }
+
+/* Loader */
+.loader-wrap {
+  position: fixed; inset: 0; background: rgba(10,10,15,0.85);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 16px; z-index: 100;
+}
+.spinner { width: 34px; height: 34px; border: 3px solid var(--border2); border-top-color: var(--green); border-radius: 50%; animation: spin .7s linear infinite; }
+@keyframes spin { to { transform:rotate(360deg) } }
+.loader-text { font-size: 13px; color: var(--text2); }
+
+/* Toast */
+.kds-toast {
+  position: fixed; bottom: 20px; left: 50%;
+  transform: translateX(-50%) translateY(60px);
+  background: var(--surface2); border: 1px solid var(--border2);
+  border-radius: var(--radius-sm); padding: 10px 22px; font-size: 13px;
+  white-space: nowrap; transition: transform .3s cubic-bezier(.34,1.56,.64,1); z-index: 200;
+}
+.kds-toast.show { transform: translateX(-50%) translateY(0); }
+.kds-toast.s { border-color: rgba(61,220,132,0.4); color: var(--green); }
+.kds-toast.e { border-color: rgba(255,92,92,0.4);  color: var(--red); }
+
+/* ── MOBILE MENU BTN ── */
+.kds-mob-menu { display: none; background: var(--surface2); border: 1px solid var(--border2); color: var(--text2); border-radius: 8px; padding: 6px 10px; font-size: 18px; cursor: pointer; font-family: inherit; line-height: 1; }
+.kds-mob-menu:active { opacity: .7; }
+#kds-sidebar-overlay { display: none; position: fixed; inset: 0; top: 56px; background: rgba(0,0,0,.55); z-index: 89; }
+#kds-sidebar-overlay.show { display: block; }
+
+@media (max-width: 700px) {
+  /* App height – iOS safe */
+  #app { height: 100vh; height: 100dvh; }
+
+  /* Header */
+  .kds-mob-menu { display: flex; align-items: center; justify-content: center; }
+  .kds-header { padding: 0 10px; gap: 8px; }
+  .header-time { display: none; }
+  #business-name { max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; }
+  .btn-icon { padding: 6px 10px; font-size: 11px; }
+
+  /* Sidebar → overlay deslizable */
+  .kds-body { height: calc(100vh - 56px); height: calc(100dvh - 56px); overflow: hidden; }
+  .kds-sidebar {
+    position: fixed; left: -285px; top: 56px;
+    height: calc(100vh - 56px); height: calc(100dvh - 56px);
+    width: 280px; z-index: 90;
+    border-right: 1px solid var(--border2);
+    transition: left .25s cubic-bezier(.4,0,.2,1);
+    box-shadow: none;
+  }
+  .kds-sidebar.open { left: 0; box-shadow: 8px 0 40px rgba(0,0,0,.55); }
+
+  /* Main – ocupa todo el ancho */
+  .kds-main { width: 100%; padding: 14px; }
+
+  /* Recipe header */
+  .recipe-header { flex-direction: column; gap: 10px; margin-bottom: 18px; }
+  .recipe-image { width: 68px; height: 68px; font-size: 28px; border-radius: 12px; }
+  .recipe-name { font-size: 20px; letter-spacing: -.3px; }
+  .recipe-badges { gap: 6px; margin-top: 8px; }
+
+  /* Ingredientes */
+  .ingredients-grid { grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 20px; }
+  .ingredient-card { padding: 10px 12px; }
+  .ingredient-qty { font-size: 18px; }
+  .ingredient-name { font-size: 12px; }
+
+  /* Timer */
+  .timer-widget { flex-wrap: wrap; gap: 8px; padding: 10px 14px; margin-bottom: 16px; }
+  .timer-display { font-size: 26px; min-width: 76px; }
+  .timer-label { font-size: 11px; flex: 1 1 100%; order: 3; color: var(--text3); }
+  .timer-btns { flex: 0; }
+  .tbtn { padding: 7px 14px; font-size: 12px; }
+
+  /* Progreso */
+  .recipe-progress { gap: 8px; padding: 10px 14px; margin-bottom: 14px; }
+
+  /* Pasos */
+  .step-card { padding: 10px 12px; gap: 10px; }
+  .step-text { font-size: 13px; line-height: 1.5; }
+  .step-num { width: 26px; height: 26px; font-size: 11px; }
+  .step-chk { width: 20px; height: 20px; font-size: 10px; }
+
+  /* Notas */
+  .recipe-notes { font-size: 12px; padding: 10px 14px; }
+
+  /* Empty state */
+  .kds-empty h2 { font-size: 16px; }
+  .kds-empty p { font-size: 12px; max-width: 200px; }
+  .kds-empty .big-icon { font-size: 40px; }
+
+  /* Setup card */
+  .setup-card { padding: 28px 20px; }
+}
+
+@media (max-width: 380px) {
+  .ingredients-grid { grid-template-columns: 1fr; }
+  .kds-header { gap: 6px; }
+}
+</style>
 </head>
 <body>
 
-<!-- ══ MODAL CONFIG ══ -->
-<div id="mcfg" class="ovl on">
-  <div class="mbox">
-    <h2>🔐 Configuración</h2>
-    <p>Ingresa la URL de tu Google Apps Script Web App. Se guarda solo en este dispositivo.</p>
-    <input id="curl" class="inp" type="url"
-      placeholder="https://script.google.com/macros/s/.../exec"
-      autocomplete="off" spellcheck="false"/>
-    <p class="merr" id="cerr">⚠️ URL inválida — debe iniciar con https://script.google.com</p>
-    <button class="btnp" id="bguardar">Guardar y continuar</button>
+<!-- ══ SETUP ══ -->
+<div id="setup-screen">
+  <div class="setup-card">
+    <div class="setup-logo">
+      <div class="icon">👨‍🍳</div>
+      <h1>Kitchen Display System</h1>
+      <p>Conecta con tu hoja de recetas para empezar</p>
+    </div>
+
+    <div class="setup-field">
+      <label>Nombre del negocio</label>
+      <input type="text" id="setup-nombre" placeholder="Mi Cocina / Nombre del restaurante">
+    </div>
+
+    <div class="setup-field">
+      <label>URL del Web App (Google Apps Script)</label>
+      <input type="url" id="setup-url" placeholder="https://script.google.com/macros/s/.../exec">
+      <div class="setup-hint">La URL pública de tu deployment. El KDS solo lee recetas — no expone costos ni precios.</div>
+    </div>
+
+    <button class="btn-setup" id="btn-connect" onclick="conectar()">
+      Conectar y abrir KDS →
+    </button>
+    <div class="setup-error" id="setup-error"></div>
   </div>
 </div>
 
-<!-- ══ HEADER ══ -->
-<header>
-  <div class="logo">
-    <div class="lic">📋</div>
-    <div><div class="lt">Programación de Exámenes</div></div>
-  </div>
-  <div class="hact">
-    <button class="bhi" onclick="cargar()">↺</button>
-    <button class="bhi" onclick="abrirCfg()">⚙️</button>
-  </div>
-</header>
+<!-- ══ APP ══ -->
+<div id="app">
+  <header class="kds-header">
+    <button class="kds-mob-menu" onclick="toggleKdsSidebar()" aria-label="Menú">☰</button>
+    <div class="kds-header-logo"><div class="live-dot"></div>KDS</div>
+    <span id="business-name" style="font-size:13px;font-weight:600;color:var(--text)">—</span>
+    <div class="header-spacer"></div>
+    <span class="header-time" id="header-time">—</span>
+    <button class="btn-icon" onclick="volverSetup()">⚙ Configurar</button>
+  </header>
 
-<!-- ══ FILTROS ══ -->
-<div class="fil">
-  <input type="search" id="bus" placeholder="🔍  Buscar profesor o materia..." oninput="render()"/>
-  <select id="fnot" onchange="render()">
-    <option value="todos">Todos</option>
-    <option value="NO">Pendientes</option>
-    <option value="SI">Notificados</option>
-  </select>
+  <div id="kds-sidebar-overlay" onclick="closeKdsSidebar()"></div>
+
+  <div class="kds-body">
+    <aside class="kds-sidebar">
+      <div class="sidebar-search">
+        <input type="text" id="search-input" placeholder="Buscar receta…" oninput="filtrar()">
+      </div>
+      <div class="sidebar-filters" id="type-filters"></div>
+      <div class="recipe-list" id="recipe-list">
+        <div class="sidebar-empty">Cargando…</div>
+      </div>
+    </aside>
+
+    <main class="kds-main" id="kds-main">
+      <div class="kds-empty">
+        <div class="big-icon">🍽</div>
+        <h2>Selecciona una receta</h2>
+        <p>Elige del panel izquierdo. Verás ingredientes, tiempos y el paso a paso interactivo.</p>
+      </div>
+    </main>
+  </div>
 </div>
 
-<!-- ══ VISTA BAR ══ -->
-<div class="vbar">
-  <div class="vtog">
-    <button class="vbtn on" id="vs" onclick="setV('sem')">📅 Semana</button>
-    <button class="vbtn"    id="vl" onclick="setV('lst')">📋 Lista</button>
-  </div>
-  <div class="tscroll" id="tabs" style="display:none"></div>
+<div class="loader-wrap" id="loader" style="display:none">
+  <div class="spinner"></div>
+  <div class="loader-text" id="loader-text">Cargando…</div>
 </div>
 
-<!-- ══ CALENDARIO ══ -->
-<div id="cal">
-  <div class="calh">
-    <button class="cnav" onclick="navSem(-1)">◀</button>
-    <span class="clab" id="clab"></span>
-    <button class="cnav" onclick="navSem(1)">▶</button>
-  </div>
-  <div class="cgrid" id="cg"></div>
-</div>
-
-<div class="res" id="res"></div>
-<div id="status"><div class="spin"></div>Cargando datos...</div>
-<div id="grid"></div>
+<div class="kds-toast" id="kds-toast"></div>
 
 <script>
-const KU='exm_url', KN='exm_notif';
-let datos=[], selFecha=null, vista='sem', semOff=0;
-let notif=JSON.parse(localStorage.getItem(KN)||'{}');
+// ── Estado ──
+let API_URL       = localStorage.getItem('kds_url')  || '';
+let allRecetas    = [];
+let recetaActual  = null;
+let completedMap  = {};   // { recetaId: Set<index> }
+let timerSecs     = 0;
+let timerRunning  = false;
+let timerIv       = null;
+let filterActivo  = 'Todas';
 
-// ── CONFIG ────────────────────────────────────────────────────
-const getUrl=()=>localStorage.getItem(KU)||'';
+// ── Init ──
+document.addEventListener('DOMContentLoaded', () => {
+  if (API_URL) document.getElementById('setup-url').value = API_URL;
+  const nombre = localStorage.getItem('kds_nombre') || '';
+  if (nombre) document.getElementById('setup-nombre').value = nombre;
+  setInterval(() => {
+    const el = document.getElementById('header-time');
+    if (el) el.textContent = new Date().toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  }, 1000);
+  if (API_URL) conectar(true);
+});
 
-function abrirCfg(){
-  document.getElementById('curl').value=getUrl();
-  document.getElementById('cerr').style.display='none';
-  document.getElementById('mcfg').classList.add('on');
-}
+// ── SETUP ──
+async function conectar(auto) {
+  const urlVal    = document.getElementById('setup-url').value.trim();
+  const nombreVal = document.getElementById('setup-nombre').value.trim();
+  const url       = urlVal || API_URL;
+  if (!url) { showErr('Ingresa la URL del Web App de Apps Script.'); return; }
 
-document.getElementById('bguardar').onclick=()=>{
-  const u=document.getElementById('curl').value.trim();
-  if(!u.startsWith('https://script.google.com')){
-    document.getElementById('cerr').style.display='block'; return;
-  }
-  localStorage.setItem(KU,u);
-  document.getElementById('mcfg').classList.remove('on');
-  cargar();
-};
+  const btn = document.getElementById('btn-connect');
+  btn.disabled = true; btn.textContent = 'Conectando…';
+  hideErr(); showLoader('Verificando conexión…');
 
-if(getUrl()) document.getElementById('mcfg').classList.remove('on');
+  try {
+    const pingResp = await fetch(`${url}?action=ping`);
+    if (!pingResp.ok) throw new Error('El servidor no respondió (HTTP ' + pingResp.status + ').');
+    const ping = await pingResp.json();
+    if (!ping.ok) throw new Error('El servidor respondió con error.');
 
-// ── CARGA ─────────────────────────────────────────────────────
-async function cargar(){
-  const url=getUrl(); if(!url) return;
-  showSt(true);
-  document.getElementById('grid').innerHTML='';
-  try{
-    const r=await fetch(url+'?t='+Date.now());
-    const d=await r.json();
-    datos=Array.isArray(d)?d.filter(x=>x.aplicador).map(x=>({
-      ...x, fecha:normFecha(x.fecha), hora:limpHora(x.hora)
-    })):[];
-    showSt(false);
-    autoNav();
-    if(vista==='sem') renderCal(); else buildTabs();
-    render();
-  }catch(e){
-    document.getElementById('status').innerHTML='⚠️ Error al cargar. Verifica la URL en ⚙️';
-  }
-}
+    showLoader('Cargando recetas…');
+    const kdsResp = await fetch(`${url}?action=getKDS`);
+    if (!kdsResp.ok) throw new Error('Error HTTP al obtener recetas.');
+    const kds = await kdsResp.json();
+    if (!kds.ok) throw new Error(kds.error || 'Error al obtener recetas.');
 
-function showSt(on){
-  const s=document.getElementById('status');
-  s.innerHTML=on?'<div class="spin"></div>Cargando...':'';
-  s.classList.toggle('on',on);
-}
+    API_URL = url;
+    localStorage.setItem('kds_url', API_URL);
+    if (nombreVal) localStorage.setItem('kds_nombre', nombreVal);
 
-// ── FECHAS ────────────────────────────────────────────────────
-function pad2(n){return String(n).padStart(2,'0');}
+    allRecetas = Array.isArray(kds.data) ? kds.data : [];
+    document.getElementById('business-name').textContent = nombreVal || localStorage.getItem('kds_nombre') || 'KDS';
 
-function normFecha(f){
-  if(!f) return '';
-  const s=f.toString().trim();
-  if(/^\d{2}\/\d{2}\/\d{4}$/.test(s)) return s;
-  if(/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(s)){
-    const[d,m,y]=s.split('/'); return pad2(d)+'/'+pad2(m)+'/'+y;
-  }
-  if(/^\d{4}-\d{2}-\d{2}/.test(s)){
-    const[y,m,d]=s.slice(0,10).split('-'); return pad2(d)+'/'+pad2(m)+'/'+y;
-  }
-  const dt=new Date(s);
-  if(!isNaN(dt)) return pad2(dt.getUTCDate())+'/'+pad2(dt.getUTCMonth()+1)+'/'+dt.getUTCFullYear();
-  return s;
-}
+    document.getElementById('setup-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'flex';
 
-function limpHora(h){
-  if(!h) return '';
-  return h.toString().trim().replace(/(\d{1,2}:\d{2}):\d{2}/,'$1');
-}
-
-function fechaBonita(f){
-  if(!f||!f.includes('/')) return f||'';
-  const[d,m,y]=f.split('/');
-  const M=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-  return `${parseInt(d)} ${M[parseInt(m)-1]} ${y}`;
-}
-
-function fechaLarga(f){
-  if(!f||!f.includes('/')) return f||'';
-  const[d,m,y]=f.split('/');
-  const M=['enero','febrero','marzo','abril','mayo','junio',
-           'julio','agosto','septiembre','octubre','noviembre','diciembre'];
-  return `${parseInt(d)} de ${M[parseInt(m)-1]} de ${y}`;
-}
-
-function pF(f){
-  if(!f) return 0;
-  const[d,m,y]=f.split('/');
-  return new Date(y,m-1,d).getTime();
-}
-
-function fmtDia(d){
-  return pad2(d.getDate())+'/'+pad2(d.getMonth()+1)+'/'+d.getFullYear();
-}
-
-// ── AUTONAV ───────────────────────────────────────────────────
-function autoNav(){
-  if(!datos.length) return;
-  const hoy=new Date(); hoy.setHours(0,0,0,0);
-  const fechas=[...new Set(datos.map(r=>r.fecha))].sort((a,b)=>pF(a)-pF(b));
-  let target=fechas[fechas.length-1];
-  for(const f of fechas){if(pF(f)>=hoy.getTime()){target=f;break;}}
-  const[d,m,y]=target.split('/');
-  const fd=new Date(y,m-1,d);
-  const dia=fd.getDay()||7;
-  const lunFd=new Date(fd); lunFd.setDate(fd.getDate()-dia+1);
-  const diaH=hoy.getDay()||7;
-  const lunH=new Date(hoy); lunH.setDate(hoy.getDate()-diaH+1);
-  semOff=Math.round((lunFd-lunH)/(7*86400000));
-}
-
-// ── VISTA ─────────────────────────────────────────────────────
-function setV(v){
-  vista=v;
-  document.getElementById('vs').classList.toggle('on',v==='sem');
-  document.getElementById('vl').classList.toggle('on',v==='lst');
-  document.getElementById('cal').style.display =v==='sem'?'block':'none';
-  document.getElementById('tabs').style.display=v==='lst'?'flex':'none';
-  semOff=0; selFecha=null;
-  if(v==='sem'){autoNav();renderCal();}else buildTabs();
-  render();
-}
-
-// ── CALENDARIO ────────────────────────────────────────────────
-function lunesDe(off){
-  const h=new Date(),dia=h.getDay()||7,l=new Date(h);
-  l.setDate(h.getDate()-dia+1+off*7); l.setHours(0,0,0,0); return l;
-}
-
-function navSem(dir){semOff+=dir;selFecha=null;renderCal();render();}
-
-function renderCal(){
-  const lun=lunesDe(semOff);
-  const dom=new Date(lun); dom.setDate(lun.getDate()+6);
-  const M=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-  document.getElementById('clab').textContent=
-    `${lun.getDate()} ${M[lun.getMonth()]} — ${dom.getDate()} ${M[dom.getMonth()]} ${dom.getFullYear()}`;
-  const conExamen=new Set(datos.map(r=>r.fecha));
-  const hoyStr=fmtDia(new Date());
-  const dias=['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
-  const cg=document.getElementById('cg'); cg.innerHTML='';
-  for(let i=0;i<7;i++){
-    const d=new Date(lun); d.setDate(lun.getDate()+i);
-    const k=fmtDia(d);
-    const div=document.createElement('div');
-    div.className='cday'+(conExamen.has(k)?' tiene':'')+(k===selFecha?' on':'')+(k===hoyStr?' hoy':'');
-    div.innerHTML=`<div class="cdn">${dias[i]}</div><div class="cnum">${d.getDate()}</div>`;
-    div.onclick=()=>{selFecha=selFecha===k?null:k;renderCal();render();};
-    cg.appendChild(div);
+    renderFiltros();
+    renderLista(allRecetas);
+    hideLoader();
+  } catch (err) {
+    hideLoader();
+    btn.disabled = false; btn.textContent = 'Conectar y abrir KDS →';
+    showErr('No se pudo conectar: ' + err.message);
   }
 }
 
-// ── TABS LISTA ────────────────────────────────────────────────
-function buildTabs(){
-  const fechas=[...new Set(datos.map(r=>r.fecha))].sort((a,b)=>pF(a)-pF(b));
-  if(!selFecha) selFecha=fechas[0]||null;
-  const cont=document.getElementById('tabs'); cont.innerHTML='';
-  [null,...fechas].forEach(f=>{
-    const b=document.createElement('button');
-    b.className='tab'+(f===selFecha?' on':'');
-    const M=['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-    b.textContent=f?`${parseInt(f.split('/')[0])} ${M[parseInt(f.split('/')[1])]}`:'Todos';
-    b.onclick=()=>{
-      selFecha=f;
-      document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
-      b.classList.add('on'); render();
-    };
-    cont.appendChild(b);
-  });
+function volverSetup() {
+  document.getElementById('setup-screen').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('setup-url').value = API_URL;
+  document.getElementById('btn-connect').disabled = false;
+  document.getElementById('btn-connect').textContent = 'Conectar y abrir KDS →';
+}
+function showErr(m) { const e=document.getElementById('setup-error'); e.textContent='⚠️ '+m; e.style.display='block'; }
+function hideErr() { document.getElementById('setup-error').style.display='none'; }
+
+// ── FILTROS / LISTA ──
+function renderFiltros() {
+  const tipos = ['Todas', ...new Set(allRecetas.map(r=>r.tipoServicio).filter(Boolean))];
+  document.getElementById('type-filters').innerHTML = tipos.map(t =>
+    `<button class="filter-chip ${t==='Todas'?'active':''}" onclick="setFiltro('${t}')">${t}</button>`
+  ).join('');
 }
 
-// ── RENDER ────────────────────────────────────────────────────
-function render(){
-  const bus=document.getElementById('bus').value.toLowerCase();
-  const fnot=document.getElementById('fnot').value;
-  const lun=lunesDe(semOff);
-  const semD=new Set();
-  for(let i=0;i<7;i++){const d=new Date(lun);d.setDate(lun.getDate()+i);semD.add(fmtDia(d));}
+function setFiltro(t) {
+  filterActivo = t;
+  document.querySelectorAll('.filter-chip').forEach(c => c.classList.toggle('active', c.textContent===t));
+  filtrar();
+}
 
-  const fil=datos.filter(r=>{
-    const okF=vista==='sem'?(selFecha?r.fecha===selFecha:semD.has(r.fecha)):(!selFecha||r.fecha===selFecha);
-    const okB=r.aplicador.toLowerCase().includes(bus)||(r.materia||'').toLowerCase().includes(bus);
-    const on=notif[k(r)]?'SI':'NO';
-    return okF&&okB&&(fnot==='todos'||on===fnot);
-  });
+function filtrar() {
+  const q = (document.getElementById('search-input').value||'').toLowerCase();
+  renderLista(allRecetas.filter(r =>
+    (filterActivo==='Todas' || r.tipoServicio===filterActivo) &&
+    (!q || r.nombre.toLowerCase().includes(q))
+  ));
+}
 
-  const grid=document.getElementById('grid'); grid.innerHTML='';
-  if(!fil.length){
-    const msg=vista==='sem'&&!selFecha?'No hay exámenes esta semana.':'Sin resultados.';
-    grid.innerHTML=`<div class="empty">📭<br><br>${msg}</div>`;
-    document.getElementById('res').innerHTML=''; return;
+function renderLista(lista) {
+  const cont = document.getElementById('recipe-list');
+  if (!lista.length) { cont.innerHTML='<div class="sidebar-empty">Sin resultados</div>'; return; }
+  cont.innerHTML = lista.map(r => `
+    <div class="recipe-item ${recetaActual&&recetaActual.recetaId===r.recetaId?'active':''}"
+         onclick="cargarReceta('${r.recetaId}')">
+      <div class="recipe-item-name">${r.nombre}</div>
+      <div class="recipe-item-type">${r.tipoServicio||'Receta'}</div>
+    </div>
+  `).join('');
+}
+
+// ── SIDEBAR MÓVIL ──
+function toggleKdsSidebar() {
+  const s = document.querySelector('.kds-sidebar');
+  const o = document.getElementById('kds-sidebar-overlay');
+  const open = s.classList.toggle('open');
+  o.classList.toggle('show', open);
+}
+function closeKdsSidebar() {
+  document.querySelector('.kds-sidebar').classList.remove('open');
+  document.getElementById('kds-sidebar-overlay').classList.remove('show');
+}
+
+// ── CARGAR RECETA ──
+async function cargarReceta(id) {
+  if (recetaActual && recetaActual.recetaId === id) { closeKdsSidebar(); return; }
+  closeKdsSidebar();
+  showLoader('Cargando receta…');
+  try {
+    const pPayload = encodeURIComponent(JSON.stringify({ recetaId: id }));
+    const resp = await fetch(`${API_URL}?action=getRecetaKDS&p=${pPayload}`);
+    if (!resp.ok) throw new Error('Error HTTP ' + resp.status);
+    const data = await resp.json();
+    if (!data.ok) throw new Error(data.error || 'Error al cargar receta.');
+
+    recetaActual = data.data;
+    if (!completedMap[id]) completedMap[id] = new Set();
+    pararTimer(); timerSecs = 0;
+    renderReceta(recetaActual);
+    filtrar(); // re-render sidebar con active correcto
+    hideLoader();
+  } catch (err) {
+    hideLoader();
+    toast('Error: ' + err.message, 'e');
   }
-  fil.forEach(r=>grid.appendChild(mkCard(r)));
-  const n=fil.filter(r=>notif[k(r)]).length;
-  document.getElementById('res').innerHTML=
-    `<span>${fil.length}</span> registro${fil.length!==1?'s':''} · <span>${n}</span> notificado${n!==1?'s':''}`;
 }
 
-// ── CLAVE ─────────────────────────────────────────────────────
-function k(r){return `${r.aplicador}|${r.fecha}|${r.hora}|${r.grupo}`;}
+// ── RENDER RECETA ──
+function renderReceta(r) {
+  const main     = document.getElementById('kds-main');
+  const pasos    = r.pasoAPaso || [];
+  const comps    = r.componentes || [];
+  const insumos  = comps.filter(c=>c.tipo==='insumo');
+  const subs     = comps.filter(c=>c.tipo==='subreceta');
+  const procs    = comps.filter(c=>c.tipo==='proceso');
+  const tTotal   = procs.reduce((a,p)=>a+(p.tiempoMinutos||0),0);
+  const done     = completedMap[r.recetaId] || new Set();
+  const pct      = pasos.length ? Math.round(done.size/pasos.length*100) : 0;
 
-// ── TARJETA ───────────────────────────────────────────────────
-function mkCard(r){
-  const id=k(r), ya=!!notif[id];
-  const n1=primerNombre(r.aplicador);
-  const tel=limpTel(r.telefono);
-  const urlWA=tel?`https://wa.me/52${tel}?text=${encodeURIComponent(msgWA(r,n1))}`:null;
-  const urlMail=r.email?`mailto:${r.email}?subject=${encodeURIComponent(asuntoMail(r))}&body=${encodeURIComponent(msgMail(r,n1))}`:null;
+  const imgHTML = r.imagen
+    ? `<img src="${r.imagen}" alt="${r.nombre}" onerror="this.parentElement.innerHTML='🍽'">`
+    : '🍽';
 
-  const c=document.createElement('div'); c.className='card';
-  c.innerHTML=`
-    <div class="ch">
+  main.innerHTML = `
+    <div class="recipe-header">
+      <div class="recipe-image">${imgHTML}</div>
       <div>
-        <div class="cn">${r.aplicador}</div>
-        <div class="cm">${r.materia}</div>
+        <div class="recipe-name">${r.nombre}</div>
+        <div class="recipe-badges">
+          <span class="badge badge-green">${r.tipoServicio||'Receta'}</span>
+          <span class="badge badge-blue">${r.rendimiento} ${r.unidadRendimiento||'porciones'}</span>
+          ${tTotal>0?`<span class="badge badge-amber">⏱ ${tTotal} min</span>`:''}
+          ${pasos.length?`<span class="badge badge-gray">${pasos.length} pasos</span>`:''}
+        </div>
       </div>
-      <span class="bdg ${ya?'bok':'bno'}">${ya?'✓ Notificado':'⏳ Pendiente'}</span>
     </div>
-    <div class="cb">
-      <div class="ir"><span class="ii">📅</span><span class="iv">${fechaBonita(r.fecha)}</span></div>
-      <div class="ir"><span class="ii">🕐</span><span class="iv">${r.hora}</span></div>
-      <div class="ir"><span class="ii">🏫</span><span class="iv">Aula ${r.aula} · Grupo ${r.grupo}</span></div>
-      ${r.telefono?`<div class="ir"><span class="ii">📱</span><span class="iv">${r.telefono}</span></div>`:''}
-      ${r.email?`<div class="ir"><span class="ii">✉️</span><span class="iv">${r.email}</span></div>`:''}
+
+    ${r.notasPreparacion?`<div class="recipe-notes">📌 <span>${r.notasPreparacion}</span></div>`:''}
+
+    ${pasos.length?`
+    <div class="recipe-progress">
+      <span style="font-size:11px;color:var(--text2)">Progreso de preparación</span>
+      <div class="progress-bar-outer"><div class="progress-bar-inner" id="prog-bar" style="width:${pct}%"></div></div>
+      <span class="progress-pct" id="prog-pct">${done.size}/${pasos.length}</span>
+    </div>`:''}
+
+    ${tTotal>0?`
+    <div class="timer-widget">
+      <div>
+        <div class="timer-display" id="timer-disp">00:00</div>
+        <div class="timer-label">Tiempo estimado: ${tTotal} min</div>
+      </div>
+      <div class="timer-btns">
+        <button class="tbtn tbtn-start" id="tbtn-main" onclick="toggleTimer()">▶ Iniciar</button>
+        <button class="tbtn tbtn-reset"  onclick="resetTimer()">↺</button>
+      </div>
+    </div>`:''}
+
+    ${insumos.length?`
+    <div class="section-title">🥩 Ingredientes</div>
+    <div class="ingredients-grid">
+      ${insumos.map(c=>`
+        <div class="ingredient-card">
+          <div><span class="ingredient-qty">${fmt(c.cantidadUsada)}</span><span class="ingredient-unit">${c.unidadMedida}</span></div>
+          <div class="ingredient-name">${c.nombre||'—'}</div>
+          ${c.porcentajeMerma>0?`<div class="ingredient-meta"><span class="merma-pill">−${c.porcentajeMerma}% merma</span></div>`:''}
+        </div>`).join('')}
+    </div>`:''}
+
+    ${subs.length?`
+    <div class="section-title">📦 Subrecetas / Bases</div>
+    <div class="ingredients-grid">
+      ${subs.map(c=>`
+        <div class="ingredient-card is-subreceta">
+          <div><span class="ingredient-qty">${fmt(c.cantidadUsada)}</span><span class="ingredient-unit">${c.unidadMedida}</span></div>
+          <div class="ingredient-name">${c.nombre||'—'}</div>
+          <div class="ingredient-meta"><span style="color:var(--blue);font-size:10px">subreceta</span></div>
+        </div>`).join('')}
+    </div>`:''}
+
+    ${procs.length?`
+    <div class="section-title">⏱ Procesos</div>
+    <div class="ingredients-grid">
+      ${procs.map(c=>`
+        <div class="ingredient-card is-proceso">
+          <div><span class="ingredient-qty">${c.tiempoMinutos}</span><span class="ingredient-unit">min</span></div>
+          <div class="ingredient-name">${c.nombre||'—'}</div>
+          <div class="ingredient-meta"><span style="color:var(--amber);font-size:10px">proceso</span></div>
+        </div>`).join('')}
+    </div>`:''}
+
+    ${pasos.length?`
+    <div class="section-title">📋 Paso a paso</div>
+    <div id="steps-wrap">
+      ${pasos.map((p,i)=>`
+        <div class="step-card ${done.has(i)?'done':''}" id="sc-${i}" onclick="toggleStep(${i})">
+          <div class="step-num">${done.has(i)?'✓':i+1}</div>
+          <div class="step-text">${p}</div>
+          <div class="step-chk">${done.has(i)?'✓':''}</div>
+        </div>`).join('')}
     </div>
-    <div class="cf">
-      ${urlWA
-        ?`<a class="bwa" href="${urlWA}" target="_blank"
-            onclick="marcar('${id}',this.closest('.card'))">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="flex-shrink:0">
-              <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
-              <path d="M12 0C5.373 0 0 5.373 0 12c0 2.065.527 4.013 1.449 5.715L0 24l6.445-1.43A11.945 11.945 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.818 9.818 0 01-4.992-1.364l-.359-.214-3.724.826.84-3.635-.235-.374A9.817 9.817 0 012.182 12C2.182 6.584 6.584 2.182 12 2.182S21.818 6.584 21.818 12 17.416 21.818 12 21.818z"/>
-            </svg>WhatsApp</a>`
-        :`<span class="bwa nt">Sin teléfono</span>`
-      }
-      ${urlMail
-        ?`<a class="bmail" href="${urlMail}"
-            onclick="marcar('${id}',this.closest('.card'))">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-              stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0">
-              <rect x="2" y="4" width="20" height="16" rx="2"/>
-              <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
-            </svg>Correo</a>`
-        :`<span class="bmail nt">Sin correo</span>`
-      }
-      <button class="bnt ${ya?'mk':''}" onclick="tog('${id}',this)">${ya?'✓':'○'}</button>
-    </div>
-    <div class="cextra">
-      <button class="bcopy" onclick="copiarMsg(this,'${id}',event)">
-        📋 Copiar mensaje para WhatsApp
+    <div style="text-align:center;padding:16px 0 8px">
+      <button onclick="resetPasos()" style="background:none;border:1px solid var(--border2);color:var(--text2);border-radius:8px;padding:8px 20px;font-family:inherit;font-size:12px;cursor:pointer" onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--text2)'">
+        ↺ Reiniciar pasos
       </button>
-    </div>`;
-  return c;
+    </div>`:`
+    <div style="padding:48px;text-align:center;color:var(--text3)">
+      <div style="font-size:32px;opacity:0.3;margin-bottom:12px">📋</div>
+      <div>Sin pasos registrados para esta receta.</div>
+    </div>`}
+  `;
 }
 
-// ── MENSAJES ──────────────────────────────────────────────────
-function msgWA(r,n){
-  return(
-    `Hola ${n}! 😊\n\n`+
-    `Te recuerdo que tienes *aplicación de examen* programada:\n\n`+
-    `📚 *Materia:* ${r.materia}\n`+
-    `👥 *Grupo:* ${r.grupo}\n`+
-    `📅 *Fecha:* ${fechaLarga(r.fecha)}\n`+
-    `🕐 *Hora:* ${r.hora}\n`+
-    `🏫 *Aula:* ${r.aula}\n\n`+
-    `Por favor confirma tu asistencia. ¡Muchas gracias! 🙏✨`
-  );
-}
+// ── PASOS ──
+function toggleStep(i) {
+  if (!recetaActual) return;
+  const id  = recetaActual.recetaId;
+  const set = completedMap[id] || new Set();
+  set.has(i) ? set.delete(i) : set.add(i);
+  completedMap[id] = set;
 
-function asuntoMail(r){
-  return `Recordatorio de aplicación de examen — ${r.materia} — ${fechaBonita(r.fecha)}`;
-}
-
-function msgMail(r,n){
-  return(
-    `Estimado/a ${n},\n\n`+
-    `Por medio del presente le recuerdo que tiene programada la aplicación del siguiente examen:\n\n`+
-    `Materia: ${r.materia}\n`+
-    `Grupo: ${r.grupo}\n`+
-    `Fecha: ${fechaLarga(r.fecha)}\n`+
-    `Hora: ${r.hora}\n`+
-    `Aula: ${r.aula}\n\n`+
-    `Le solicito amablemente confirmar su asistencia.\n\n`+
-    `Quedo a sus órdenes.\n\n`+
-    `Coordinación Académica\nUNSIS · Enfermería`
-  );
-}
-
-// ── COPIAR MENSAJE ───────────────────────────────────────────
-function copiarMsg(btn, id, e){
-  e.stopPropagation();
-  const r = datos.find(x => k(x) === id);
-  if(!r) return;
-  const texto = msgWA(r, primerNombre(r.aplicador));
-  navigator.clipboard.writeText(texto).then(()=>{
-    btn.classList.add('ok');
-    btn.textContent = '✓ Copiado — abre WhatsApp y pégalo';
-    setTimeout(()=>{ btn.classList.remove('ok'); btn.textContent='📋 Copiar mensaje para WhatsApp'; }, 3000);
-  }).catch(()=>{
-    // Fallback para móviles que bloquean clipboard
-    const ta = document.createElement('textarea');
-    ta.value = texto; ta.style.position='fixed'; ta.style.opacity='0';
-    document.body.appendChild(ta); ta.focus(); ta.select();
-    document.execCommand('copy');
-    document.body.removeChild(ta);
-    btn.classList.add('ok');
-    btn.textContent = '✓ Copiado — abre WhatsApp y pégalo';
-    setTimeout(()=>{ btn.classList.remove('ok'); btn.textContent='📋 Copiar mensaje para WhatsApp'; }, 3000);
-  });
-}
-
-// ── UTILIDADES ────────────────────────────────────────────────
-function primerNombre(n){
-  const PREF = ['L.E.','M.C.','Dr.','Dra.','M.E.','M.S.P.','E.E.P.','E.E.N.',
-    'E.E.S.M.P.','M.R.N.','M.T.H.E.Q.','M.C.I.B.','M.C.E.','M.B.E.',
-    'M.C.C.A.R.B.','M.E.D.','M.A.S.E.','M.I.T.I.','L.N.','M.C.E.E.U.',
-    'Méd.','Mtra.','M.D.G.P.L.','M.E.S.','M.C.A.C.','E.E.','E.E.N.'];
-  const SKIP = new Set(['del','de','la','los','las','el','y']);
-  const tokens = n.trim().split(/\s+/);
-  let i = 0;
-  // Saltar prefijos académicos
-  while(i < tokens.length){
-    const t = tokens[i];
-    if(PREF.includes(t) || (/\./.test(t) && /^[A-ZÁÉÍÓÚÜÑ]/.test(t)))
-      i++;
-    else break;
+  const card = document.getElementById('sc-'+i);
+  if (card) {
+    card.className = 'step-card ' + (set.has(i)?'done':'');
+    card.querySelector('.step-num').textContent = set.has(i)?'✓':i+1;
+    card.querySelector('.step-chk').textContent = set.has(i)?'✓':'';
   }
-  // Saltar artículos (del, de, la...)
-  while(i < tokens.length && SKIP.has(tokens[i].toLowerCase())) i++;
-  return tokens[i] || tokens[tokens.length-1] || n;
+
+  const total = (recetaActual.pasoAPaso||[]).length;
+  const pct   = total ? Math.round(set.size/total*100) : 0;
+  const bar   = document.getElementById('prog-bar');
+  const pctEl = document.getElementById('prog-pct');
+  if (bar)   bar.style.width   = pct+'%';
+  if (pctEl) pctEl.textContent = set.size+'/'+total;
+
+  if (pct === 100) toast('✅ ¡Receta completada!', 's');
 }
 
-function limpTel(t){
-  if(!t) return '';
-  return t.toString().replace(/\D/g,'').replace(/^52/,'').slice(0,10);
+function resetPasos() {
+  if (!recetaActual) return;
+  completedMap[recetaActual.recetaId] = new Set();
+  renderReceta(recetaActual);
+  toast('Pasos reiniciados', '');
 }
 
-// ── NOTIF ─────────────────────────────────────────────────────
-function marcar(id,card){notif[id]=true;save();updCard(card,true);}
-function tog(id,btn){
-  const on=!notif[id]; notif[id]=on; save();
-  updCard(btn.closest('.card'),on);
-  btn.classList.toggle('mk',on); btn.textContent=on?'✓':'○';
+// ── TIMER ──
+function toggleTimer() {
+  if (timerRunning) {
+    pararTimer();
+    const b = document.getElementById('tbtn-main');
+    if (b) { b.textContent='▶ Continuar'; b.className='tbtn tbtn-start'; }
+  } else {
+    timerRunning = true;
+    const b = document.getElementById('tbtn-main');
+    if (b) { b.textContent='⏸ Pausar'; b.className='tbtn tbtn-pause'; }
+    timerIv = setInterval(() => { timerSecs++; updateTimerDisplay(); }, 1000);
+  }
 }
-function updCard(card,on){
-  const b=card.querySelector('.bdg');
-  b.className='bdg '+(on?'bok':'bno');
-  b.textContent=on?'✓ Notificado':'⏳ Pendiente';
+
+function pararTimer() { clearInterval(timerIv); timerRunning=false; }
+function resetTimer() {
+  pararTimer(); timerSecs=0; updateTimerDisplay();
+  const b=document.getElementById('tbtn-main');
+  if(b){b.textContent='▶ Iniciar';b.className='tbtn tbtn-start';}
 }
-function save(){localStorage.setItem(KN,JSON.stringify(notif));}
+function updateTimerDisplay() {
+  const el=document.getElementById('timer-disp');
+  if(!el)return;
+  const m=Math.floor(timerSecs/60).toString().padStart(2,'0');
+  const s=(timerSecs%60).toString().padStart(2,'0');
+  el.textContent=m+':'+s;
+}
 
-// PWA desactivado temporalmente
+// ── UTILS ──
+function fmt(v) {
+  const n=parseFloat(v)||0;
+  return n%1===0?n.toString():parseFloat(n.toFixed(2)).toString();
+}
+function showLoader(t) { document.getElementById('loader-text').textContent=t||'Cargando…'; document.getElementById('loader').style.display='flex'; }
+function hideLoader() { document.getElementById('loader').style.display='none'; }
 
-// ── INICIO ────────────────────────────────────────────────────
-document.getElementById('cal').style.display='block';
-document.getElementById('tabs').style.display='none';
-renderCal();
-if(getUrl()) cargar();
+let tT;
+function toast(msg, type) {
+  const el=document.getElementById('kds-toast');
+  el.textContent=msg; el.className='kds-toast show '+(type||'');
+  clearTimeout(tT); tT=setTimeout(()=>el.classList.remove('show'),2800);
+}
 </script>
 </body>
 </html>
